@@ -1,0 +1,204 @@
+"""HTTP API routes."""
+
+from datetime import datetime, timezone
+from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi.responses import JSONResponse
+
+from app import tickets as ticket_store
+from app.jobs import job_store
+from app.records import generate_job_csv, patch_record, validate_patch_fields
+from app.schemas import (
+    CreateJobRequest,
+    CreateJobResponse,
+    JobItemSummary,
+    JobResponse,
+    JobResultItem,
+    JobResultsResponse,
+    PatchRecordRequest,
+    Ticket,
+    TicketListResponse,
+    TicketSnippet,
+)
+
+router = APIRouter()
+
+
+@router.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@router.get("/api/tickets", response_model=TicketListResponse)
+def list_tickets(
+    q: str | None = Query(default=None),
+    channel: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> TicketListResponse:
+    items, total = ticket_store.list_tickets(
+        q=q, channel=channel, limit=limit, offset=offset
+    )
+    return TicketListResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get("/api/tickets/{ticket_id}", response_model=Ticket)
+def get_ticket(ticket_id: str) -> Ticket:
+    ticket = ticket_store.get_ticket(ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return ticket
+
+
+@router.post("/api/jobs", status_code=202, response_model=CreateJobResponse)
+async def create_job(payload: CreateJobRequest) -> CreateJobResponse:
+    job = job_store.create_job(payload.ticket_ids)
+    job_store.start_job(job)
+    return CreateJobResponse(
+        job_id=job.id,
+        status=job.status,
+        total=len(job.ticket_ids),
+    )
+
+
+@router.get("/api/jobs/{job_id}", response_model=JobResponse)
+def get_job(job_id: str) -> JobResponse:
+    job = job_store.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    item_summaries = [
+        JobItemSummary(
+            ticket_id=it.ticket_id,
+            record_id=it.record_id,
+            status=it.status,
+            attempts=it.attempts,
+            flags_count=len(it.flags),
+            error=it.error,
+        )
+        for it in job.items.values()
+    ]
+
+    return JobResponse(
+        id=job.id,
+        status=job.status,
+        created_at=job.created_at,
+        finished_at=job.finished_at,
+        progress=job_store.progress(job),
+        items=item_summaries,
+    )
+
+
+@router.get("/api/jobs/{job_id}/results", response_model=JobResultsResponse)
+def get_job_results(
+    job_id: str,
+    status: str | None = Query(default=None),
+) -> JobResultsResponse:
+    job = job_store.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    result_items: list[JobResultItem] = []
+    for it in job.items.values():
+        if status and it.status != status:
+            continue
+
+        raw_ticket = ticket_store.get_ticket(it.ticket_id)
+        if raw_ticket is None:
+            snippet = TicketSnippet(
+                subject="",
+                body="",
+                channel="email",
+                received_at=datetime.now(timezone.utc),
+                from_email="",
+            )
+        else:
+            snippet = TicketSnippet(
+                subject=raw_ticket.subject,
+                body=raw_ticket.body,
+                channel=raw_ticket.channel,
+                received_at=raw_ticket.received_at,
+                from_email=raw_ticket.from_email,
+            )
+
+        result_items.append(
+            JobResultItem(
+                ticket_id=it.ticket_id,
+                record_id=it.record_id,
+                status=it.status,
+                attempts=it.attempts,
+                record=it.record,
+                draft=it.draft,
+                field_meta=it.field_meta,
+                flags=it.flags,
+                edited_fields=sorted(it.edited_fields),
+                original_values=it.original_values,
+                resolved=it.resolved,
+                raw_outputs=it.raw_outputs,
+                validation_errors=it.validation_errors,
+                error=it.error,
+                ticket=snippet,
+            )
+        )
+
+    return JobResultsResponse(
+        job_id=job.id,
+        status=job.status,
+        items=result_items,
+    )
+
+
+@router.post("/api/jobs/{job_id}/cancel")
+def cancel_job_endpoint(job_id: str) -> dict[str, str]:
+    job = job_store.cancel_job(job_id)
+    return {"status": job.status}
+
+
+@router.patch("/api/records/{record_id}", response_model=JobResultItem)
+def patch_record_endpoint(record_id: str, payload: PatchRecordRequest):
+    errors = validate_patch_fields(payload.fields)
+    if errors:
+        return JSONResponse(status_code=422, content={"errors": errors})
+
+    item = patch_record(record_id, payload.fields)
+
+    raw_ticket = ticket_store.get_ticket(item.ticket_id)
+    snippet = TicketSnippet(
+        subject=raw_ticket.subject if raw_ticket else "",
+        body=raw_ticket.body if raw_ticket else "",
+        channel=raw_ticket.channel if raw_ticket else "email",
+        received_at=raw_ticket.received_at if raw_ticket else datetime.now(timezone.utc),
+        from_email=raw_ticket.from_email if raw_ticket else "",
+    )
+
+    return JobResultItem(
+        ticket_id=item.ticket_id,
+        record_id=item.record_id,
+        status=item.status,
+        attempts=item.attempts,
+        record=item.record,
+        draft=item.draft,
+        field_meta=item.field_meta,
+        flags=item.flags,
+        edited_fields=sorted(item.edited_fields),
+        original_values=item.original_values,
+        resolved=item.resolved,
+        raw_outputs=item.raw_outputs,
+        validation_errors=item.validation_errors,
+        error=item.error,
+        ticket=snippet,
+    )
+
+
+@router.get("/api/jobs/{job_id}/export.csv")
+def export_job_csv_endpoint(job_id: str) -> Response:
+    csv_data = generate_job_csv(job_id)
+    headers = {
+        "Content-Disposition": f'attachment; filename="job_{job_id}_records.csv"',
+    }
+    return Response(
+        content=csv_data,
+        media_type="text/csv; charset=utf-8",
+        headers=headers,
+    )
+
+
