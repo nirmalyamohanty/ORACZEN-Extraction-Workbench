@@ -1,0 +1,24 @@
+---
+description: Extraction Workbench architecture and conventions
+alwaysApply: true
+---
+
+# Architecture & Engineering Standards
+
+- **Core Focus:** Extraction Workbench human review tool for customer support ticket records.
+- **Backend:** Python 3.11+, FastAPI, Pydantic v2, pytest, httpx in `backend/`.
+- **Frontend:** Next.js App Router, TypeScript, Tailwind CSS in `frontend/`.
+- **State & Communication:** In-memory job state, HTTP API communication. Frontend communicates solely via FastAPI endpoints.
+- **Default Provider:** Deterministic mock provider (`PROVIDER=mock`), no API key required for evaluation.
+
+### Schema & Record Invariants
+- `ExtractedRecord`: `company` (required, non-empty after strip), `product` (optional enum), `category` (enum), `severity` (optional enum), `requested_action` (enum), `refund_amount` (USD, optional finite number >= 0), `deadline` (optional date), `escalated` (boolean). Configured with `extra="forbid"`.
+- `FieldMeta`: tracks `confidence` (0..1), `grounded`, `evidence` string, `source` ("model" | "human"), and `note`.
+- Audit trail: human modifications via `PATCH /api/records/{id}` update `edited_fields`, preserve `original_values`, and set `source="human"`.
+
+### Design Decisions
+1. Unstated severity returns `null` with `not_stated` flag, keeping the queue focused on actual anomalies.
+2. Foreign currencies (e.g. EUR) set `refund_amount = null` with `currency_mismatch` flag to prevent erroneous USD conversions.
+3. Multi-issue tickets prioritize primary category by risk (`churn_risk > outage > billing > bug > feature_request > how_to`) and flag `multi_issue`.
+4. Near-empty bodies bypass the LLM and land directly in `needs_review` with `skipped_model`.
+5. UI polls `GET /api/jobs/{id}` at 1-second intervals with abort controllers and non-stacking calls.
