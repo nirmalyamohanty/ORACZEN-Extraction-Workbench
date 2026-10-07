@@ -115,4 +115,37 @@ describe("FieldEditor component", () => {
 
     expect(onPatchMock).toHaveBeenCalledWith("company", "Oraczen Inc");
   });
+
+  it("handles Enter to commit and Escape to cancel an edit", () => {
+    const onPatchMock = vi.fn().mockResolvedValue(true);
+
+    render(
+      <FieldEditor
+        recordId="rec_keyboard_test"
+        recordData={{
+          company: "Original Company",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{}}
+        isSaving={false}
+      />
+    );
+
+    const input = screen.getByTestId("input-company") as HTMLInputElement;
+    expect(input.value).toBe("Original Company");
+
+    // Change and press Enter -> triggers onPatchField
+    fireEvent.change(input, { target: { value: "New Company" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onPatchMock).toHaveBeenCalledWith("company", "New Company");
+
+    // Change again and press Escape -> reverts back to original
+    fireEvent.change(input, { target: { value: "Aborted Company" } });
+    expect(input.value).toBe("Aborted Company");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(input.value).toBe("Original Company");
+  });
 });

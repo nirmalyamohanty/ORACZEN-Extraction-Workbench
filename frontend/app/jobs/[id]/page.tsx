@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useJobPolling } from "@/lib/useJobPolling";
 import { patchRecord, cancelJob, getExportCsvUrl, ApiError } from "@/lib/api";
 import { JobResultItem, ExtractedRecord } from "@/lib/types";
 import { ProgressBar } from "@/components/ProgressBar";
-import { ItemList } from "@/components/ItemList";
+import { ItemList, sortItemsForReview } from "@/components/ItemList";
 import { TicketPane } from "@/components/TicketPane";
 import { FieldEditor } from "@/components/FieldEditor";
 import { FlagList } from "@/components/FlagList";
@@ -20,8 +20,10 @@ import {
   Ban,
   CheckCircle,
   RotateCw,
+  HelpCircle,
 } from "lucide-react";
 import { RerunModal } from "@/components/RerunModal";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 
 export default function JobReviewPage() {
   const routeParams = useParams();
@@ -41,6 +43,11 @@ export default function JobReviewPage() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [isRerunOpen, setIsRerunOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+
+  const sortedReviewItems = useMemo(() => {
+    return sortItemsForReview(results?.items || []);
+  }, [results?.items]);
 
   // Set default selected ticket as first available or first needs_review
   useEffect(() => {
@@ -57,6 +64,63 @@ export default function JobReviewPage() {
       }
     }
   }, [results, selectedTicketId]);
+
+  // Global Keyboard shortcuts: j/k to navigate records, e to edit first field, ? for cheatsheet
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isShortcutsOpen || isRerunOpen) {
+        if (e.key === "Escape") {
+          setIsShortcutsOpen(false);
+          setIsRerunOpen(false);
+        }
+        return;
+      }
+
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "SELECT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if (isInput) return;
+
+      if (e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        if (sortedReviewItems.length === 0) return;
+        const currentIdx = sortedReviewItems.findIndex(
+          (it) => it.ticket_id === selectedTicketId
+        );
+        if (currentIdx === -1) {
+          setSelectedTicketId(sortedReviewItems[0].ticket_id);
+        } else if (currentIdx < sortedReviewItems.length - 1) {
+          setSelectedTicketId(sortedReviewItems[currentIdx + 1].ticket_id);
+        }
+      } else if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        if (sortedReviewItems.length === 0) return;
+        const currentIdx = sortedReviewItems.findIndex(
+          (it) => it.ticket_id === selectedTicketId
+        );
+        if (currentIdx > 0) {
+          setSelectedTicketId(sortedReviewItems[currentIdx - 1].ticket_id);
+        }
+      } else if (e.key === "e" || e.key === "E") {
+        e.preventDefault();
+        const firstField = document.getElementById("field-company");
+        if (firstField) {
+          firstField.focus();
+        }
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sortedReviewItems, selectedTicketId, isShortcutsOpen, isRerunOpen]);
 
   const selectedItem: JobResultItem | undefined = results?.items.find(
     (it) => it.ticket_id === selectedTicketId
@@ -190,8 +254,17 @@ export default function JobReviewPage() {
           </div>
         </div>
 
-        {/* Action buttons: Export CSV, Cancel */}
+        {/* Action buttons: Shortcuts, Export CSV, Cancel */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsShortcutsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer"
+            title="Keyboard shortcuts (?)"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Shortcuts (?)</span>
+          </button>
+
           {job && (job.status === "queued" || job.status === "running") && (
             <button
               onClick={handleCancelJob}
@@ -348,6 +421,12 @@ export default function JobReviewPage() {
           }}
         />
       )}
+
+      {/* Keyboard Shortcuts Modal (O4) */}
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }

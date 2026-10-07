@@ -68,6 +68,21 @@ export function FieldEditor({
     onPatchField(field, rawVal);
   };
 
+  const handleKeyDown = (field: string, e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCommit(field);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      const orig = recordData[field as keyof ExtractedRecord];
+      setValues((prev) => ({
+        ...prev,
+        [field]: orig !== null && orig !== undefined ? orig : (field === "escalated" ? false : ""),
+      }));
+      (e.target as HTMLElement).blur();
+    }
+  };
+
   const renderFieldFooter = (field: string) => {
     const meta = fieldMeta[field];
     const isEdited = editedFields.includes(field);
@@ -160,7 +175,7 @@ export function FieldEditor({
           value={(values.company as string) || ""}
           onChange={(e) => handleChange("company", e.target.value)}
           onBlur={() => handleCommit("company")}
-          onKeyDown={(e) => e.key === "Enter" && handleCommit("company")}
+          onKeyDown={(e) => handleKeyDown("company", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.company ? "border-rose-500" : "border-slate-700"
           }`}
@@ -181,6 +196,7 @@ export function FieldEditor({
           value={(values.product as string) || ""}
           onChange={(e) => handleChange("product", e.target.value)}
           onBlur={() => handleCommit("product")}
+          onKeyDown={(e) => handleKeyDown("product", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.product ? "border-rose-500" : "border-slate-700"
           }`}
@@ -207,6 +223,7 @@ export function FieldEditor({
           value={(values.category as string) || ""}
           onChange={(e) => handleChange("category", e.target.value)}
           onBlur={() => handleCommit("category")}
+          onKeyDown={(e) => handleKeyDown("category", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.category ? "border-rose-500" : "border-slate-700"
           }`}
@@ -234,6 +251,7 @@ export function FieldEditor({
           value={(values.severity as string) || ""}
           onChange={(e) => handleChange("severity", e.target.value)}
           onBlur={() => handleCommit("severity")}
+          onKeyDown={(e) => handleKeyDown("severity", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.severity ? "border-rose-500" : "border-slate-700"
           }`}
@@ -259,6 +277,7 @@ export function FieldEditor({
           value={(values.requested_action as string) || ""}
           onChange={(e) => handleChange("requested_action", e.target.value)}
           onBlur={() => handleCommit("requested_action")}
+          onKeyDown={(e) => handleKeyDown("requested_action", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.requested_action ? "border-rose-500" : "border-slate-700"
           }`}
@@ -288,7 +307,7 @@ export function FieldEditor({
           value={values.refund_amount !== undefined ? (values.refund_amount as string | number) : ""}
           onChange={(e) => handleChange("refund_amount", e.target.value)}
           onBlur={() => handleCommit("refund_amount")}
-          onKeyDown={(e) => e.key === "Enter" && handleCommit("refund_amount")}
+          onKeyDown={(e) => handleKeyDown("refund_amount", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.refund_amount ? "border-rose-500" : "border-slate-700"
           }`}
@@ -310,6 +329,7 @@ export function FieldEditor({
           value={(values.deadline as string) || ""}
           onChange={(e) => handleChange("deadline", e.target.value)}
           onBlur={() => handleCommit("deadline")}
+          onKeyDown={(e) => handleKeyDown("deadline", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.deadline ? "border-rose-500" : "border-slate-700"
           }`}
