@@ -168,16 +168,67 @@ class TicketSnippet(BaseModel):
 
 
 class JobResultItem(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "ticket_id": "tkt_0001",
+                "record_id": "rec_0001",
+                "status": "done",
+                "attempts": 1,
+                "record": {
+                    "company": "Acme Corp",
+                    "product": "Zen Orchestrator",
+                    "category": "bug",
+                    "severity": "high",
+                    "requested_action": "fix",
+                    "refund_amount": None,
+                    "deadline": "2026-10-15",
+                    "escalated": False,
+                },
+                "draft": None,
+                "field_meta": {
+                    "severity": {
+                        "confidence": 0.95,
+                        "grounded": True,
+                        "evidence": "Critical outage affecting all users",
+                        "source": "model",
+                        "note": None,
+                    }
+                },
+                "flags": [],
+                "edited_fields": [],
+                "original_values": {},
+                "resolved": False,
+                "raw_outputs": [],
+                "validation_errors": [],
+                "error": None,
+                "ticket": {
+                    "subject": "System down",
+                    "body": "Critical outage affecting all users",
+                    "channel": "email",
+                    "received_at": "2026-10-07T12:00:00Z",
+                    "from_email": "admin@acme.com",
+                },
+            }
+        }
+    )
+
     ticket_id: str
     record_id: str
     status: ItemStatus
     attempts: int
     record: Optional[ExtractedRecord] = None
     draft: Optional[dict[str, Any]] = None
-    field_meta: dict[str, FieldMeta] = Field(default_factory=dict)
+    field_meta: dict[str, FieldMeta] = Field(
+        default_factory=dict,
+        description="Metadata keyed by extracted field name (e.g. company, severity).",
+    )
     flags: list[Flag] = Field(default_factory=list)
     edited_fields: list[str] = Field(default_factory=list)
-    original_values: dict[str, Any] = Field(default_factory=dict)
+    original_values: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Original model-extracted values before human edits, keyed by field name.",
+    )
     resolved: bool = False
     raw_outputs: list[str] = Field(default_factory=list)
     validation_errors: list[str] = Field(default_factory=list)
@@ -192,8 +243,20 @@ class JobResultsResponse(BaseModel):
 
 
 class PatchRecordRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    fields: dict[str, Any]
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "fields": {
+                    "severity": "high",
+                    "refund_amount": 150.00,
+                }
+            }
+        },
+    )
+    fields: dict[str, Any] = Field(
+        description="Dictionary of field names and new values to update (e.g. {'severity': 'high'})."
+    )
 
 
 class RerunRecordRequest(BaseModel):
@@ -212,7 +275,48 @@ class FieldDiff(BaseModel):
 
 
 class RerunRecordResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "item": {
+                    "ticket_id": "tkt_0001",
+                    "record_id": "rec_0001",
+                    "status": "done",
+                    "attempts": 1,
+                    "record": None,
+                    "draft": None,
+                    "field_meta": {},
+                    "flags": [],
+                    "edited_fields": ["severity"],
+                    "original_values": {"severity": "medium"},
+                    "resolved": False,
+                    "raw_outputs": [],
+                    "validation_errors": [],
+                    "error": None,
+                    "ticket": {
+                        "subject": "System down",
+                        "body": "Critical outage affecting all users",
+                        "channel": "email",
+                        "received_at": "2026-10-07T12:00:00Z",
+                        "from_email": "admin@acme.com",
+                    },
+                },
+                "diff": {
+                    "severity": {
+                        "old_value": "medium",
+                        "new_value": "high",
+                        "is_edited": True,
+                        "will_replace": False,
+                    }
+                },
+                "preview": True,
+            }
+        }
+    )
+
     item: JobResultItem
-    diff: dict[str, FieldDiff]
+    diff: dict[str, FieldDiff] = Field(
+        description="Field-by-field diff comparison keyed by field name."
+    )
     preview: bool
 

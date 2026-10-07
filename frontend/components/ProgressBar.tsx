@@ -4,13 +4,11 @@ import { StatusBadge } from "./StatusBadge";
 interface ProgressBarProps {
   progress?: JobProgress;
   status: JobStatus;
-  reconnecting?: boolean;
 }
 
 export function ProgressBar({
   progress,
   status,
-  reconnecting,
 }: ProgressBarProps) {
   if (!progress) return null;
 
@@ -22,11 +20,6 @@ export function ProgressBar({
           <span className="text-sm font-semibold text-white">
             {progress.finished} of {progress.total} processed ({progress.percent}%)
           </span>
-          {reconnecting && (
-            <span className="text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">
-              Reconnecting...
-            </span>
-          )}
         </div>
 
         {/* Breakdown counts */}

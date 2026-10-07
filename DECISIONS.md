@@ -42,12 +42,14 @@ hallucinated records that look plausible.
 
 Polling. The frontend calls `GET /api/jobs/{id}` every second with an `AbortController`
 that cancels the previous request before firing the next. Polling stops once the job
-reaches a terminal state.
+reaches a terminal state (`done`, `cancelled`).
 
-Polling beats SSE for this use case because it works on free-tier hosting and serverless
-proxies that kill long-lived connections (Vercel, Render free tier). SSE would reduce the
-request count at scale but adds connection-management complexity that isn't justified for
-an internal review tool used by a handful of people.
+Polling is the right default for this use case: it works on free-tier hosting and
+serverless proxies that buffer or terminate long-lived connections (Vercel, Render free
+tier). SSE would lower the request count at scale, but it adds a server-side async
+generator, an `EventSource` on the client, and a fallback path for proxies that strip
+chunked responses — complexity that is not justified for an internal review tool used
+by a handful of reviewers. SSE is noted as future work if the tool is deployed at scale.
 
 ---
 
@@ -97,22 +99,10 @@ I would also want:
   tabs.
 - **Abort-controller non-stacking**: simulate a slow first response, verify a second tick
   does not fire a new request while the first is in flight.
-- **PATCH optimistic state**: verify the UI updates locally on save and rolls back if the
-  server returns 422 (once optimistic updates are added).
+- **PATCH validation feedback**: verify the saving state is displayed and inline
+  422 validation errors are rendered under the specific rejected field.
 - **Export CSV button**: assert the `<a>` href points to the correct URL with the right
   job id.
-
----
-
-## What I would do with another day
-
-- **Keyboard-first review**: `j`/`k` to move between records, `Tab` between fields,
-  `Enter` to save, `Esc` to cancel. The current UI is fully mouse-driven.
-- **Re-run on a single record**: let the reviewer trigger re-extraction after correcting
-  the prompt or switching providers, keeping human-edited fields unless overwritten.
-- **Human-edited filter**: a toggle in the results list to show only records a reviewer
-  has touched, useful in long sessions.
-- **SQLite persistence**: so restarts don't wipe everything.
 
 ---
 
@@ -125,5 +115,3 @@ I would also want:
   patch this is fine, but it means a `needs_review` draft with multiple missing required
   fields cannot be partially saved unless the dummy baseline covers them. The current
   workaround (a `dummy` dict with defaults) is slightly hacky.
-- The frontend has no optimistic update on PATCH — a spinner blocks the field until the
-  server responds. On a LAN this is fine; on a slow connection it feels unresponsive.

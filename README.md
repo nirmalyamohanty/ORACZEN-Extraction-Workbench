@@ -2,7 +2,6 @@
 
 Human review tool for LLM-extracted support ticket fields.
 
-**Live demo:** *(deploy and add URL here before submitting)*
 
 ## Architecture
 
@@ -78,7 +77,7 @@ npx vitest run
 
 | Variable | Default | Description |
 |---|---|---|
-| `PROVIDER` | `mock` | Which extraction provider to use (`mock`, `groq`, `openai`-compat) |
+| `PROVIDER` | `mock` | Which extraction provider to use (`mock`) |
 | `MAX_CONCURRENCY` | `4` | Max simultaneous provider calls per job |
 | `MOCK_DELAY_MIN_MS` | `300` | Min artificial delay in the mock provider |
 | `MOCK_DELAY_MAX_MS` | `1200` | Max artificial delay in the mock provider |
@@ -86,8 +85,6 @@ npx vitest run
 | `MOCK_FAIL_TWICE_IDS` | `tkt_0042,tkt_0121` | Tickets that return invalid output on both attempts (land in `needs_review`) |
 | `TICKETS_PATH` | `data/tickets.jsonl` | Path to the tickets file (relative to `backend/`) |
 | `FRONTEND_ORIGINS` | `http://localhost:3000` | Comma-separated CORS origins |
-| `PROVIDER_API_KEY` | *(blank)* | API key for real providers — never commit a value |
-| `PROVIDER_MODEL` | *(blank)* | Model name for real providers |
 | `NEXT_PUBLIC_API_URL` | — | Backend base URL (frontend only) |
 
 ### Mock deliberate failures

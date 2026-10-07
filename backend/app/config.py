@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     MOCK_FAIL_TWICE_IDS: str = "tkt_0042,tkt_0121"
     TICKETS_PATH: str = "data/tickets.jsonl"
     FRONTEND_ORIGINS: str = "http://localhost:3000"
-    PROVIDER_API_KEY: str = ""
-    PROVIDER_MODEL: str = ""
 
     def frontend_origin_list(self) -> list[str]:
         return [o.strip() for o in self.FRONTEND_ORIGINS.split(",") if o.strip()]

@@ -211,21 +211,3 @@ async def test_post_jobs_api_and_422():
         results_data = results_resp.json()
         assert len(results_data["items"]) == 2
 
-
-@pytest.mark.asyncio
-async def test_job_sse_events_stream():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
-        assert resp.status_code == 202
-        job_id = resp.json()["job_id"]
-
-        async with client.stream("GET", f"/api/jobs/{job_id}/events") as sse_resp:
-            assert sse_resp.status_code == 200
-            assert "text/event-stream" in sse_resp.headers["content-type"]
-            first_chunk = False
-            async for line in sse_resp.aiter_lines():
-                if "event:" in line or "data:" in line:
-                    first_chunk = True
-                    break
-            assert first_chunk is True

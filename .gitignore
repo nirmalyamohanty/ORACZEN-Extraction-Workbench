@@ -12,3 +12,8 @@ node_modules/
 *.egg-info/
 dist/
 build/
+.cursor/
+.agents/
+AGENTS.md
+
+

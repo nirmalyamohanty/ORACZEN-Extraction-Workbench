@@ -9,7 +9,6 @@ interface UseJobPollingReturn {
   results: JobResultsResponse | null;
   loading: boolean;
   error: string | null;
-  reconnecting: boolean;
   mutateResults: (updater: (prev: JobResultsResponse | null) => JobResultsResponse | null) => void;
   refresh: () => Promise<void>;
 }
@@ -19,9 +18,8 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
   const [results, setResults] = useState<JobResultsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [reconnecting, setReconnecting] = useState<boolean>(false);
 
-  // References to prevent stacking and enable clean teardown
+  // Prevent concurrent in-flight requests from stacking
   const inFlightRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const statusRef = useRef<string | null>(null);
@@ -43,101 +41,35 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
       setResults(resultsData);
       statusRef.current = jobData.status;
       setError(null);
-      setReconnecting(false);
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-      // Keep showing last good data if poll fails; show reconnecting if we have data
-      if (isInitial && !job) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      if (isInitial) {
         setError(err instanceof Error ? err.message : "Failed to load job");
-      } else {
-        setReconnecting(true);
       }
+      // On subsequent poll failures keep last good data visible
     } finally {
       inFlightRef.current = false;
-      if (isInitial) {
-        setLoading(false);
-      }
+      if (isInitial) setLoading(false);
     }
   }, [jobId]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     let isMounted = true;
-    let eventSource: EventSource | null = null;
 
-    // Initial fetch
+    // Kick off the first fetch immediately
     fetchOnce(true);
 
-    // O6: Try Server-Sent Events (SSE) for instant push updates.
-    // Note on proxies: Some corporate proxies, firewalls, and serverless hosts (like Vercel edge functions)
-    // buffer or prematurely sever long-lived SSE streams. If EventSource fails or closes, polling remains
-    // the rock-solid fallback.
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    if (typeof window !== "undefined" && window.EventSource) {
-      try {
-        eventSource = new EventSource(`${apiBase}/api/jobs/${jobId}/events`);
-
-        eventSource.addEventListener("progress", (evt) => {
-          try {
-            const data = JSON.parse(evt.data);
-            setJob((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                status: data.status,
-                progress: data.progress,
-              };
-            });
-            statusRef.current = data.status;
-            // Fetch updated results when progress shifts
-            fetchOnce(false);
-          } catch {
-            // Ignore parse errors
-          }
-        });
-
-        eventSource.addEventListener("complete", (evt) => {
-          try {
-            const data = JSON.parse(evt.data);
-            setJob((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                status: data.status,
-                progress: data.progress,
-              };
-            });
-            statusRef.current = data.status;
-            fetchOnce(false);
-          } catch {
-            // Ignore parse errors
-          }
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-        });
-
-        eventSource.onerror = () => {
-          // Fall back gracefully to polling loop on SSE connection failure
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-        };
-      } catch {
-        // SSE unsupported or blocked; rely exclusively on polling
-      }
-    }
-
+    // Poll every 1 s while the job is active; stop once it reaches a terminal state
     const pollLoop = async () => {
-      // Continue polling only while status is queued or running
-      if (statusRef.current === "queued" || statusRef.current === "running" || statusRef.current === null) {
-        await fetchOnce(false);
-      }
-      if (isMounted && (statusRef.current === "queued" || statusRef.current === "running")) {
+      const active =
+        statusRef.current === "queued" ||
+        statusRef.current === "running" ||
+        statusRef.current === null;
+      if (active) await fetchOnce(false);
+      const stillActive =
+        statusRef.current === "queued" || statusRef.current === "running";
+      if (isMounted && stillActive) {
         timer = setTimeout(pollLoop, 1000);
       }
     };
@@ -146,13 +78,8 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
 
     return () => {
       isMounted = false;
-      if (eventSource) {
-        eventSource.close();
-      }
       if (timer) clearTimeout(timer);
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, [jobId, fetchOnce]);
 
@@ -168,7 +95,6 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
     results,
     loading,
     error,
-    reconnecting,
     mutateResults,
     refresh: () => fetchOnce(false),
   };

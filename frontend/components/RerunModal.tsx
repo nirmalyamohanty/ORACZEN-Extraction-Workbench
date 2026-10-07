@@ -29,8 +29,6 @@ export function RerunModal({
   ticketId,
   onSuccess,
 }: RerunModalProps) {
-  const [provider, setProvider] = useState<string>("mock");
-  const [model, setModel] = useState<string>("");
   const [overwriteEdited, setOverwriteEdited] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [diff, setDiff] = useState<Record<string, FieldDiff> | null>(null);
@@ -44,8 +42,6 @@ export function RerunModal({
     setPreviewError(null);
     try {
       const res = await rerunRecord(recordId, {
-        provider: provider || undefined,
-        model: model.trim() || undefined,
         overwrite_edited: overwrite,
         preview_only: true,
       });
@@ -64,8 +60,6 @@ export function RerunModal({
     setPreviewError(null);
     try {
       const res = await rerunRecord(recordId, {
-        provider: provider || undefined,
-        model: model.trim() || undefined,
         overwrite_edited: overwriteEdited,
         preview_only: false,
       });
@@ -115,66 +109,29 @@ export function RerunModal({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Settings Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/50 p-4 rounded-lg border border-slate-800/80">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Provider
-              </label>
-              <select
-                value={provider}
-                onChange={(e) => {
-                  setProvider(e.target.value);
-                  setDiff(null);
-                }}
-                className="w-full text-xs bg-slate-900 border border-slate-800 rounded-md px-3 py-2 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              >
-                <option value="mock">Mock Provider (Deterministic)</option>
-                <option value="openai">OpenAI Compatible</option>
-                <option value="groq">Groq</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Model Name <span className="text-slate-500 font-normal">(optional)</span>
-              </label>
+          <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/80">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
-                type="text"
-                value={model}
-                placeholder="e.g. gpt-4o-mini"
+                type="checkbox"
+                checked={overwriteEdited}
                 onChange={(e) => {
-                  setModel(e.target.value);
-                  setDiff(null);
+                  const checked = e.target.checked;
+                  setOverwriteEdited(checked);
+                  if (diff) {
+                    handleFetchPreview(checked);
+                  }
                 }}
-                className="w-full text-xs bg-slate-900 border border-slate-800 rounded-md px-3 py-2 text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="mt-0.5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
               />
-            </div>
-
-            <div className="sm:col-span-2 pt-2 border-t border-slate-800/60">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={overwriteEdited}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setOverwriteEdited(checked);
-                    if (diff) {
-                      handleFetchPreview(checked);
-                    }
-                  }}
-                  className="mt-0.5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
-                />
-                <div className="text-xs">
-                  <span className="font-medium text-slate-200">
-                    Overwrite human-edited fields
-                  </span>
-                  <p className="text-slate-400 mt-0.5">
-                    When unchecked, values previously edited by humans are strictly preserved.
-                  </p>
-                </div>
-              </label>
-            </div>
+              <div className="text-xs">
+                <span className="font-medium text-slate-200">
+                  Overwrite human-edited fields
+                </span>
+                <p className="text-slate-400 mt-0.5">
+                  When unchecked, values previously edited by humans are strictly preserved.
+                </p>
+              </div>
+            </label>
           </div>
 
           {/* Action to Generate Preview */}
