@@ -1,0 +1,316 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useJobPolling } from "@/lib/useJobPolling";
+import { patchRecord, cancelJob, getExportCsvUrl, ApiError } from "@/lib/api";
+import { JobResultItem, ExtractedRecord } from "@/lib/types";
+import { ProgressBar } from "@/components/ProgressBar";
+import { ItemList } from "@/components/ItemList";
+import { TicketPane } from "@/components/TicketPane";
+import { FieldEditor } from "@/components/FieldEditor";
+import { FlagList } from "@/components/FlagList";
+import { RawOutputPanel } from "@/components/RawOutputPanel";
+import {
+  Download,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
+
+export default function JobReviewPage() {
+  const routeParams = useParams();
+  const jobId = (routeParams?.id as string) || "";
+  const {
+    job,
+    results,
+    loading,
+    error,
+    reconnecting,
+    mutateResults,
+    refresh,
+  } = useJobPolling(jobId);
+
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Set default selected ticket as first available or first needs_review
+  useEffect(() => {
+    if (!results || results.items.length === 0) return;
+    if (!selectedTicketId) {
+      // Prioritize selecting first needs_review item
+      const reviewItem = results.items.find(
+        (it) => it.status === "needs_review" && !it.resolved
+      );
+      if (reviewItem) {
+        setSelectedTicketId(reviewItem.ticket_id);
+      } else {
+        setSelectedTicketId(results.items[0].ticket_id);
+      }
+    }
+  }, [results, selectedTicketId]);
+
+  const selectedItem: JobResultItem | undefined = results?.items.find(
+    (it) => it.ticket_id === selectedTicketId
+  );
+
+  const handlePatchField = async (
+    field: string,
+    value: unknown
+  ): Promise<boolean> => {
+    if (!selectedItem) return false;
+    setIsSaving(true);
+    setSaveSuccessMsg(null);
+
+    try {
+      const updatedItem = await patchRecord(selectedItem.record_id, {
+        [field]: value,
+      } as unknown as Partial<ExtractedRecord>);
+
+      // Clear field-specific error
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+
+      // Update state in result items
+      mutateResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((it) =>
+            it.record_id === updatedItem.record_id ? updatedItem : it
+          ),
+        };
+      });
+
+      setSaveSuccessMsg(`Saved ${field}`);
+      setTimeout(() => setSaveSuccessMsg(null), 2500);
+      return true;
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.errors) {
+        // Show server validation error under that specific field
+        setFieldErrors((prev) => ({
+          ...prev,
+          ...err.errors,
+        }));
+      } else if (err instanceof ApiError) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [field]: err.message,
+        }));
+      } else {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [field]: "Failed to save field",
+        }));
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelJob = async () => {
+    if (!confirm("Are you sure you want to cancel this job?")) return;
+    try {
+      await cancelJob(jobId);
+      refresh();
+    } catch (err) {
+      alert("Failed to cancel job.");
+    }
+  };
+
+  // Loading state
+  if (loading && !job) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-32 text-slate-400 gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        <p className="text-sm font-medium">Loading job {jobId}...</p>
+      </div>
+    );
+  }
+
+  // 404 or Error state
+  if (error && !job) {
+    return (
+      <div className="flex-1 max-w-2xl mx-auto p-8 my-auto text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-white">Job Not Found</h2>
+        <p className="text-sm text-slate-400">{error}</p>
+        <div className="pt-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Tickets</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const exportUrl = getExportCsvUrl(jobId);
+
+  return (
+    <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-5">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                Job Review
+              </h1>
+              <span className="font-mono text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                {jobId}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Side-by-side verification and inline corrections of model extractions
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons: Export CSV, Cancel */}
+        <div className="flex items-center gap-2.5">
+          {job && (job.status === "queued" || job.status === "running") && (
+            <button
+              onClick={handleCancelJob}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-rose-300 bg-rose-950/30 hover:bg-rose-950/50 border border-rose-800/60 transition-colors cursor-pointer"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              <span>Cancel Job</span>
+            </button>
+          )}
+
+          <a
+            href={exportUrl}
+            download
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Live Progress Bar */}
+      {job && (
+        <ProgressBar
+          progress={job.progress}
+          status={job.status}
+          reconnecting={reconnecting}
+        />
+      )}
+
+      {/* Main Two-Column Review Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left column: Items List (4 cols) */}
+        <div className="lg:col-span-4 h-[750px]">
+          <ItemList
+            items={results?.items || []}
+            selectedTicketId={selectedTicketId}
+            onSelectTicket={(tid) => {
+              setSelectedTicketId(tid);
+              setFieldErrors({});
+            }}
+          />
+        </div>
+
+        {/* Right column: Review Pane (8 cols) */}
+        <div className="lg:col-span-8 flex flex-col space-y-4">
+          {selectedItem ? (
+            <>
+              {/* Header of review pane with Flags & Toast */}
+              <div className="space-y-3">
+                {saveSuccessMsg && (
+                  <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 p-2.5 rounded-lg animate-fade-in">
+                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{saveSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Flags list at top */}
+                {selectedItem.flags && selectedItem.flags.length > 0 && (
+                  <FlagList flags={selectedItem.flags} />
+                )}
+              </div>
+
+              {/* Side-by-side Ticket vs Extracted Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                {/* Raw Ticket Panel */}
+                <div>
+                  <TicketPane
+                    ticketId={selectedItem.ticket_id}
+                    ticket={selectedItem.ticket}
+                  />
+                </div>
+
+                {/* Extracted Fields Editor */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
+                  <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-slate-100 text-sm">
+                        Extracted Fields
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Edit values inline. Press Enter or blur to save.
+                      </p>
+                    </div>
+                    {isSaving && (
+                      <span className="flex items-center gap-1 text-[11px] text-indigo-400">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Saving...
+                      </span>
+                    )}
+                  </div>
+
+                  <FieldEditor
+                    recordId={selectedItem.record_id}
+                    recordData={
+                      selectedItem.record
+                        ? selectedItem.record
+                        : (selectedItem.draft || {})
+                    }
+                    fieldMeta={selectedItem.field_meta || {}}
+                    editedFields={selectedItem.edited_fields || []}
+                    originalValues={selectedItem.original_values || {}}
+                    onPatchField={handlePatchField}
+                    fieldErrors={fieldErrors}
+                    isSaving={isSaving}
+                  />
+                </div>
+              </div>
+
+              {/* Collapsible Raw Model Outputs for needs_review or transparency */}
+              <RawOutputPanel
+                rawOutputs={selectedItem.raw_outputs || []}
+                validationErrors={selectedItem.validation_errors || []}
+              />
+            </>
+          ) : (
+            <div className="p-16 border border-dashed border-slate-800 rounded-xl text-center text-slate-500 text-sm">
+              Select a ticket from the left column to view raw content and review fields.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
