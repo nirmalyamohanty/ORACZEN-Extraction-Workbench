@@ -65,9 +65,72 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     let isMounted = true;
+    let eventSource: EventSource | null = null;
 
     // Initial fetch
     fetchOnce(true);
+
+    // O6: Try Server-Sent Events (SSE) for instant push updates.
+    // Note on proxies: Some corporate proxies, firewalls, and serverless hosts (like Vercel edge functions)
+    // buffer or prematurely sever long-lived SSE streams. If EventSource fails or closes, polling remains
+    // the rock-solid fallback.
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    if (typeof window !== "undefined" && window.EventSource) {
+      try {
+        eventSource = new EventSource(`${apiBase}/api/jobs/${jobId}/events`);
+
+        eventSource.addEventListener("progress", (evt) => {
+          try {
+            const data = JSON.parse(evt.data);
+            setJob((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                status: data.status,
+                progress: data.progress,
+              };
+            });
+            statusRef.current = data.status;
+            // Fetch updated results when progress shifts
+            fetchOnce(false);
+          } catch {
+            // Ignore parse errors
+          }
+        });
+
+        eventSource.addEventListener("complete", (evt) => {
+          try {
+            const data = JSON.parse(evt.data);
+            setJob((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                status: data.status,
+                progress: data.progress,
+              };
+            });
+            statusRef.current = data.status;
+            fetchOnce(false);
+          } catch {
+            // Ignore parse errors
+          }
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+        });
+
+        eventSource.onerror = () => {
+          // Fall back gracefully to polling loop on SSE connection failure
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+        };
+      } catch {
+        // SSE unsupported or blocked; rely exclusively on polling
+      }
+    }
 
     const pollLoop = async () => {
       // Continue polling only while status is queued or running
@@ -83,6 +146,9 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
 
     return () => {
       isMounted = false;
+      if (eventSource) {
+        eventSource.close();
+      }
       if (timer) clearTimeout(timer);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();

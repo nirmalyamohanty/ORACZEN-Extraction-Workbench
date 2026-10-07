@@ -1,8 +1,10 @@
 """HTTP API routes."""
 
+import asyncio
+import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import tickets as ticket_store
 from app.jobs import job_store
@@ -146,6 +148,54 @@ def get_job_results(
         job_id=job.id,
         status=job.status,
         items=result_items,
+    )
+
+
+@router.get("/api/jobs/{job_id}/events")
+async def job_events_endpoint(job_id: str):
+    """Server-Sent Events (SSE) stream for live job progress updates."""
+    job = job_store.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_generator():
+        last_progress_dump = None
+        while True:
+            current_job = job_store.jobs.get(job_id)
+            if not current_job:
+                break
+
+            prog = job_store.progress(current_job)
+            prog_dump = prog.model_dump()
+
+            if prog_dump != last_progress_dump:
+                payload = {
+                    "job_id": current_job.id,
+                    "status": current_job.status,
+                    "progress": prog_dump,
+                }
+                yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
+                last_progress_dump = prog_dump
+
+            if current_job.status in ("done", "cancelled"):
+                complete_payload = {
+                    "job_id": current_job.id,
+                    "status": current_job.status,
+                    "progress": prog_dump,
+                }
+                yield f"event: complete\ndata: {json.dumps(complete_payload)}\n\n"
+                break
+
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
