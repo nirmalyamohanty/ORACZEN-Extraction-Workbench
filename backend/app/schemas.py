@@ -195,3 +195,24 @@ class PatchRecordRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     fields: dict[str, Any]
 
+
+class RerunRecordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    overwrite_edited: bool = False
+    preview_only: bool = False
+
+
+class FieldDiff(BaseModel):
+    old_value: Any = None
+    new_value: Any = None
+    is_edited: bool
+    will_replace: bool
+
+
+class RerunRecordResponse(BaseModel):
+    item: JobResultItem
+    diff: dict[str, FieldDiff]
+    preview: bool
+

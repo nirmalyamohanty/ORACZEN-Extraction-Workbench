@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Ban,
   CheckCircle,
+  RotateCw,
 } from "lucide-react";
+import { RerunModal } from "@/components/RerunModal";
 
 export default function JobReviewPage() {
   const routeParams = useParams();
@@ -38,6 +40,7 @@ export default function JobReviewPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [isRerunOpen, setIsRerunOpen] = useState<boolean>(false);
 
   // Set default selected ticket as first available or first needs_review
   useEffect(() => {
@@ -273,12 +276,23 @@ export default function JobReviewPage() {
                         Edit values inline. Press Enter or blur to save.
                       </p>
                     </div>
-                    {isSaving && (
-                      <span className="flex items-center gap-1 text-[11px] text-indigo-400">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Saving...
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isSaving && (
+                        <span className="flex items-center gap-1 text-[11px] text-indigo-400">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Saving...
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsRerunOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-800/60 transition-colors shadow-sm cursor-pointer"
+                        title="Re-run extraction pipeline for this record"
+                      >
+                        <RotateCw className="w-3 h-3" />
+                        <span>Re-run</span>
+                      </button>
+                    </div>
                   </div>
 
                   <FieldEditor
@@ -311,6 +325,29 @@ export default function JobReviewPage() {
           )}
         </div>
       </div>
+
+      {/* Re-run Modal (O3) */}
+      {selectedItem && (
+        <RerunModal
+          isOpen={isRerunOpen}
+          onClose={() => setIsRerunOpen(false)}
+          recordId={selectedItem.record_id}
+          ticketId={selectedItem.ticket_id}
+          onSuccess={(updatedItem) => {
+            mutateResults((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                items: prev.items.map((it) =>
+                  it.record_id === updatedItem.record_id ? updatedItem : it
+                ),
+              };
+            });
+            setSaveSuccessMsg("Re-run completed and applied");
+            setTimeout(() => setSaveSuccessMsg(null), 3000);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   JobResponse,
   JobResultItem,
   JobResultsResponse,
+  RerunRecordResponse,
   Ticket,
   TicketListResponse,
 } from "./types";
@@ -109,6 +110,21 @@ export async function patchRecord(
 export async function cancelJob(jobId: string): Promise<{ status: string }> {
   return request<{ status: string }>(`/api/jobs/${jobId}/cancel`, {
     method: "POST",
+  });
+}
+
+export async function rerunRecord(
+  recordId: string,
+  payload?: {
+    provider?: string;
+    model?: string;
+    overwrite_edited?: boolean;
+    preview_only?: boolean;
+  }
+): Promise<RerunRecordResponse> {
+  return request<RerunRecordResponse>(`/api/records/${recordId}/rerun`, {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
   });
 }
 

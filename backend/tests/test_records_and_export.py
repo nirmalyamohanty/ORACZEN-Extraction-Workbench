@@ -161,3 +161,108 @@ async def test_csv_export_endpoint():
         assert rows[0]["ticket_id"] == "tkt_0005"
         assert rows[0]["escalated"] == "true"
         assert "escalated" in rows[0]["edited_fields"]
+
+
+@pytest.mark.asyncio
+async def test_rerun_record_preserves_human_edits_by_default():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
+        job_id = res.json()["job_id"]
+        job = job_store.jobs[job_id]
+        while job.status != "done":
+            import asyncio
+            await asyncio.sleep(0.05)
+
+        item = job.items["tkt_0001"]
+        rec_id = item.record_id
+
+        # Patch severity to 'low'
+        await client.patch(
+            f"/api/records/{rec_id}",
+            json={"fields": {"severity": "low"}},
+        )
+        assert "severity" in item.edited_fields
+        assert item.record.severity == "low"
+
+        # Re-run without overwrite_edited (default false)
+        rerun_res = await client.post(
+            f"/api/records/{rec_id}/rerun",
+            json={"overwrite_edited": False},
+        )
+        assert rerun_res.status_code == 200
+        data = rerun_res.json()
+
+        # Human-edited severity must be preserved!
+        assert data["item"]["record"]["severity"] == "low"
+        assert "severity" in data["item"]["edited_fields"]
+        assert data["diff"]["severity"]["is_edited"] is True
+        assert data["diff"]["severity"]["will_replace"] is False
+
+
+@pytest.mark.asyncio
+async def test_rerun_record_overwrites_when_flag_true():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
+        job_id = res.json()["job_id"]
+        job = job_store.jobs[job_id]
+        while job.status != "done":
+            import asyncio
+            await asyncio.sleep(0.05)
+
+        item = job.items["tkt_0001"]
+        rec_id = item.record_id
+
+        # Patch severity to 'low'
+        await client.patch(
+            f"/api/records/{rec_id}",
+            json={"fields": {"severity": "low"}},
+        )
+
+        # Re-run with overwrite_edited = True
+        rerun_res = await client.post(
+            f"/api/records/{rec_id}/rerun",
+            json={"overwrite_edited": True},
+        )
+        assert rerun_res.status_code == 200
+        data = rerun_res.json()
+
+        assert data["diff"]["severity"]["will_replace"] is True
+        # Since it was overwritten by model, severity is whatever mock produced
+        assert data["item"]["record"]["company"] == "Castlerock Mining"
+
+
+@pytest.mark.asyncio
+async def test_rerun_record_preview_mode_does_not_mutate():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
+        job_id = res.json()["job_id"]
+        job = job_store.jobs[job_id]
+        while job.status != "done":
+            import asyncio
+            await asyncio.sleep(0.05)
+
+        item = job.items["tkt_0001"]
+        rec_id = item.record_id
+
+        # Patch company
+        await client.patch(
+            f"/api/records/{rec_id}",
+            json={"fields": {"company": "Custom Human Company"}},
+        )
+
+        # Preview rerun
+        preview_res = await client.post(
+            f"/api/records/{rec_id}/rerun",
+            json={"preview_only": True, "overwrite_edited": True},
+        )
+        assert preview_res.status_code == 200
+        preview_data = preview_res.json()
+        assert preview_data["preview"] is True
+        # In preview, item.record in response shows the projected value
+        assert preview_data["item"]["record"]["company"] == "Castlerock Mining"
+
+        # But in actual job_store, item is NOT changed
+        assert item.record.company == "Custom Human Company"

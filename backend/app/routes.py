@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app import tickets as ticket_store
 from app.jobs import job_store
-from app.records import generate_job_csv, patch_record, validate_patch_fields
+from app.records import generate_job_csv, patch_record, rerun_record, validate_patch_fields
 from app.schemas import (
     CreateJobRequest,
     CreateJobResponse,
@@ -15,6 +15,8 @@ from app.schemas import (
     JobResultItem,
     JobResultsResponse,
     PatchRecordRequest,
+    RerunRecordRequest,
+    RerunRecordResponse,
     Ticket,
     TicketListResponse,
     TicketSnippet,
@@ -186,6 +188,54 @@ def patch_record_endpoint(record_id: str, payload: PatchRecordRequest):
         validation_errors=item.validation_errors,
         error=item.error,
         ticket=snippet,
+    )
+
+
+@router.post("/api/records/{record_id}/rerun", response_model=RerunRecordResponse)
+async def rerun_record_endpoint(
+    record_id: str,
+    payload: RerunRecordRequest | None = None,
+) -> RerunRecordResponse:
+    req = payload or RerunRecordRequest()
+    item, diff, is_preview = await rerun_record(
+        record_id=record_id,
+        provider_name=req.provider,
+        model_name=req.model,
+        overwrite_edited=req.overwrite_edited,
+        preview_only=req.preview_only,
+    )
+
+    raw_ticket = ticket_store.get_ticket(item.ticket_id)
+    snippet = TicketSnippet(
+        subject=raw_ticket.subject if raw_ticket else "",
+        body=raw_ticket.body if raw_ticket else "",
+        channel=raw_ticket.channel if raw_ticket else "email",
+        received_at=raw_ticket.received_at if raw_ticket else datetime.now(timezone.utc),
+        from_email=raw_ticket.from_email if raw_ticket else "",
+    )
+
+    result_item = JobResultItem(
+        ticket_id=item.ticket_id,
+        record_id=item.record_id,
+        status=item.status,
+        attempts=item.attempts,
+        record=item.record,
+        draft=item.draft,
+        field_meta=item.field_meta,
+        flags=item.flags,
+        edited_fields=sorted(item.edited_fields),
+        original_values=item.original_values,
+        resolved=item.resolved,
+        raw_outputs=item.raw_outputs,
+        validation_errors=item.validation_errors,
+        error=item.error,
+        ticket=snippet,
+    )
+
+    return RerunRecordResponse(
+        item=result_item,
+        diff=diff,
+        preview=is_preview,
     )
 
 

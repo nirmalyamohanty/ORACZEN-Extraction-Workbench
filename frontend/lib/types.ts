@@ -156,3 +156,16 @@ export interface JobResultsResponse {
   status: JobStatus;
   items: JobResultItem[];
 }
+
+export interface FieldDiff {
+  old_value: unknown;
+  new_value: unknown;
+  is_edited: boolean;
+  will_replace: boolean;
+}
+
+export interface RerunRecordResponse {
+  item: JobResultItem;
+  diff: Record<string, FieldDiff>;
+  preview: boolean;
+}

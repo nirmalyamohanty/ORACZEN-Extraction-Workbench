@@ -10,15 +10,18 @@ from app.providers.openai_compat import OpenAICompatibleProvider
 _REAL_PROVIDER_ALIASES = frozenset({"openai", "groq", "gemini"})
 
 
-def get_provider() -> Provider:
-    name = settings.PROVIDER.lower().strip()
-    if name == "mock":
+def get_provider(name: str | None = None, model: str | None = None) -> Provider:
+    provider_name = (name or settings.PROVIDER).lower().strip()
+    if provider_name == "mock":
         return MockProvider()
-    if name in _REAL_PROVIDER_ALIASES:
+    if provider_name in _REAL_PROVIDER_ALIASES:
         base_urls = {
             "openai": "https://api.openai.com/v1",
             "groq": "https://api.groq.com/openai/v1",
             "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
         }
-        return OpenAICompatibleProvider(base_url=base_urls[name])
-    raise ValueError(f"Unknown PROVIDER: {settings.PROVIDER!r}")
+        return OpenAICompatibleProvider(
+            base_url=base_urls[provider_name],
+            model=model,
+        )
+    raise ValueError(f"Unknown PROVIDER: {provider_name!r}")
