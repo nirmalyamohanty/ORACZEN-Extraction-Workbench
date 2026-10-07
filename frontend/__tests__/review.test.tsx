@@ -148,4 +148,50 @@ describe("FieldEditor component", () => {
     fireEvent.keyDown(input, { key: "Escape" });
     expect(input.value).toBe("Original Company");
   });
+
+  it("retains rejected value open when fieldErrors is populated after failed patch", () => {
+    const onPatchMock = vi.fn().mockResolvedValue(false);
+
+    const { rerender } = render(
+      <FieldEditor
+        recordId="rec_rollback_test"
+        recordData={{
+          company: "Original Company",
+          severity: "low",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{}}
+        isSaving={false}
+      />
+    );
+
+    const select = screen.getByTestId("select-severity") as HTMLSelectElement;
+    expect(select.value).toBe("low");
+
+    // Re-render as if optimistic patch rolled back to original data but fieldErrors has error
+    rerender(
+      <FieldEditor
+        recordId="rec_rollback_test"
+        recordData={{
+          company: "Original Company",
+          severity: "low",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{
+          severity: "Input should be 'low', 'medium', 'high' or 'critical'",
+        }}
+        isSaving={false}
+      />
+    );
+
+    // Error is visible
+    const errorEl = screen.getByTestId("error-severity");
+    expect(errorEl.textContent).toContain("Input should be 'low', 'medium', 'high' or 'critical'");
+  });
 });

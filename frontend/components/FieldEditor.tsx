@@ -36,19 +36,29 @@ export function FieldEditor({
   const [values, setValues] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
-    setValues({
-      company: recordData.company ?? "",
-      product: recordData.product ?? "",
-      category: recordData.category ?? "",
-      severity: recordData.severity ?? "",
-      requested_action: recordData.requested_action ?? "",
-      refund_amount: recordData.refund_amount !== null && recordData.refund_amount !== undefined
-        ? recordData.refund_amount
-        : "",
-      deadline: recordData.deadline ?? "",
-      escalated: recordData.escalated ?? false,
+    setValues((prev) => {
+      const next: Record<string, unknown> = {
+        company: recordData.company ?? "",
+        product: recordData.product ?? "",
+        category: recordData.category ?? "",
+        severity: recordData.severity ?? "",
+        requested_action: recordData.requested_action ?? "",
+        refund_amount:
+          recordData.refund_amount !== null && recordData.refund_amount !== undefined
+            ? recordData.refund_amount
+            : "",
+        deadline: recordData.deadline ?? "",
+        escalated: recordData.escalated ?? false,
+      };
+      // If a field has an active validation error, keep the user's typed value open
+      for (const f of Object.keys(fieldErrors)) {
+        if (fieldErrors[f] && f in prev && prev[f] !== undefined) {
+          next[f] = prev[f];
+        }
+      }
+      return next;
     });
-  }, [recordId, recordData]);
+  }, [recordId, recordData, fieldErrors]);
 
   const handleChange = (field: string, val: unknown) => {
     setValues((prev) => ({ ...prev, [field]: val }));

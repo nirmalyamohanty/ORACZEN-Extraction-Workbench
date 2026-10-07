@@ -134,19 +134,58 @@ export default function JobReviewPage() {
     setIsSaving(true);
     setSaveSuccessMsg(null);
 
+    // Snapshot of the current item for rollback on 422 / error
+    const snapshotItem: JobResultItem = JSON.parse(JSON.stringify(selectedItem));
+
+    // 1. Optimistic update: reflect change in UI state immediately
+    mutateResults((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((it) => {
+          if (it.record_id !== selectedItem.record_id) return it;
+          const nextRecord = it.record ? { ...it.record, [field]: value } : null;
+          const nextDraft = it.draft
+            ? { ...it.draft, [field]: value }
+            : !it.record
+            ? { [field]: value }
+            : null;
+          const nextEdited = Array.from(new Set([...it.edited_fields, field]));
+          const nextMeta = {
+            ...it.field_meta,
+            [field]: {
+              confidence: 1.0,
+              grounded: true,
+              evidence: it.field_meta[field]?.evidence || null,
+              source: "human" as const,
+              note: "edited by reviewer",
+            },
+          };
+          return {
+            ...it,
+            record: nextRecord as ExtractedRecord | null,
+            draft: nextDraft,
+            edited_fields: nextEdited,
+            field_meta: nextMeta,
+          };
+        }),
+      };
+    });
+
+    // Clear any previous error on this field
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+
     try {
+      // 2. Execute PATCH request against backend
       const updatedItem = await patchRecord(selectedItem.record_id, {
         [field]: value,
       } as unknown as Partial<ExtractedRecord>);
 
-      // Clear field-specific error
-      setFieldErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-
-      // Update state in result items
+      // 3. Keep change and sync with authoritative server response
       mutateResults((prev) => {
         if (!prev) return prev;
         return {
@@ -161,8 +200,19 @@ export default function JobReviewPage() {
       setTimeout(() => setSaveSuccessMsg(null), 2500);
       return true;
     } catch (err: unknown) {
+      // 4. Rollback immediately to snapshot state on 422 or network failure
+      mutateResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((it) =>
+            it.record_id === snapshotItem.record_id ? snapshotItem : it
+          ),
+        };
+      });
+
+      // Show server validation error under that specific field
       if (err instanceof ApiError && err.errors) {
-        // Show server validation error under that specific field
         setFieldErrors((prev) => ({
           ...prev,
           ...err.errors,
