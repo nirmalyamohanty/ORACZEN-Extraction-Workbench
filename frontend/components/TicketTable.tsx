@@ -98,8 +98,13 @@ export function TicketTable({
                     {t.attachments > 0 && ` (${t.attachments} att)`}
                   </div>
                 </td>
-                <td className="py-2.5 px-3 text-sm text-[#6b6b66] line-clamp-2 max-w-md">
-                  {t.body_preview}
+                <td className="py-2.5 px-3 max-w-md">
+                  <div
+                    className="text-xs text-[#6b6b66] line-clamp-2 leading-relaxed break-words"
+                    title={t.body_preview}
+                  >
+                    {t.body_preview}
+                  </div>
                 </td>
                 <td className="py-2.5 px-3 text-xs text-[#6b6b66] whitespace-nowrap">
                   {formatDate(t.received_at)}
