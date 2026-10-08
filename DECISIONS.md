@@ -40,16 +40,9 @@ hallucinated records that look plausible.
 
 ### 5. Progress reporting — polling or streaming?
 
-Polling. The frontend calls `GET /api/jobs/{id}` every second with an `AbortController`
-that cancels the previous request before firing the next. Polling stops once the job
-reaches a terminal state (`done`, `cancelled`).
+Polling. The frontend polls `GET /api/jobs/{id}` and `GET /api/jobs/{id}/results` every second, using an `inFlightRef` to prevent concurrent polls from stacking if network latency spikes, and an `AbortController` to cleanly abort pending requests on unmount. Polling stops automatically once the job reaches a terminal state (`done`, `cancelled`, `failed`).
 
-Polling is the right default for this use case: it works on free-tier hosting and
-serverless proxies that buffer or terminate long-lived connections (Vercel, Render free
-tier). SSE would lower the request count at scale, but it adds a server-side async
-generator, an `EventSource` on the client, and a fallback path for proxies that strip
-chunked responses — complexity that is not justified for an internal review tool used
-by a handful of reviewers. SSE is noted as future work if the tool is deployed at scale.
+Polling is the right default for this use case: it works reliably on free-tier hosting and serverless proxies that buffer or terminate long-lived connections (Vercel, Render free tier). SSE would lower the request count at scale, but it adds a server-side async generator, an `EventSource` on the client, and a fallback path for proxies that strip chunked responses — complexity that is not justified for an internal review tool used by a handful of reviewers. SSE is noted as future work if the tool is deployed at scale.
 
 ---
 

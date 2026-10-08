@@ -172,18 +172,21 @@ class JobStore:
                         item.error = f"Ticket {item.ticket_id} not found"
                     else:
                         res = await process_item(active_provider, ticket)
-                        item.status = res.status
-                        item.attempts = res.attempts
-                        item.record = res.record
-                        item.draft = res.draft
-                        item.field_meta = res.field_meta
-                        item.flags = res.flags
-                        item.raw_outputs = res.raw_outputs
-                        item.validation_errors = res.validation_errors
-                        item.error = res.error
+                        # Only apply result if job was not cancelled while we were waiting
+                        if item.status != "cancelled":
+                            item.status = res.status
+                            item.attempts = res.attempts
+                            item.record = res.record
+                            item.draft = res.draft
+                            item.field_meta = res.field_meta
+                            item.flags = res.flags
+                            item.raw_outputs = res.raw_outputs
+                            item.validation_errors = res.validation_errors
+                            item.error = res.error
                 except Exception as exc:
-                    item.status = "failed"
-                    item.error = str(exc)
+                    if item.status != "cancelled":
+                        item.status = "failed"
+                        item.error = str(exc)
                 finally:
                     if item.status == "running":
                         item.status = "failed"
@@ -199,10 +202,16 @@ class JobStore:
             job.finished_at = datetime.now(timezone.utc)
 
     def cancel_job(self, job_id: str) -> Job:
-        """Cancel queued and unstarted items in a job."""
+        """Cancel a job, marking only queued or running items as cancelled."""
         job = self.jobs.get(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
+
+        if job.status in ("done", "cancelled", "failed"):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Job is already in terminal state '{job.status}'",
+            )
 
         job.status = "cancelled"
         now = datetime.now(timezone.utc)

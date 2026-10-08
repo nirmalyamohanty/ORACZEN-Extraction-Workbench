@@ -197,16 +197,15 @@ async def rerun_record(
     merged_data: dict[str, Any] = dict(current_data)
     for fname in RECORD_FIELD_NAMES:
         if overwrite_edited or fname not in item.edited_fields:
-            merged_data[fname] = new_data.get(fname)
+            if fname in new_data:
+                merged_data[fname] = new_data[fname]
             if fname in result.field_meta:
                 item.field_meta[fname] = result.field_meta[fname]
-            elif fname in item.field_meta:
+            elif fname in item.field_meta and fname in new_data:
                 del item.field_meta[fname]
             if overwrite_edited and fname in item.edited_fields:
                 item.edited_fields.remove(fname)
-        else:
-            # Preserved human edit: keep current value and human field_meta
-            pass
+        # else: preserve human edit — keep current value and field_meta unchanged
 
     try:
         valid_rec = ExtractedRecord.model_validate(merged_data)

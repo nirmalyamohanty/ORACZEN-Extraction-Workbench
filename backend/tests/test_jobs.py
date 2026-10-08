@@ -211,3 +211,64 @@ async def test_post_jobs_api_and_422():
         results_data = results_resp.json()
         assert len(results_data["items"]) == 2
 
+
+@pytest.mark.asyncio
+async def test_cancel_job_in_flight():
+    """Verify cancelling an in-flight job marks items cancelled and prevents completed tasks from overwriting status."""
+    store = JobStore()
+    tids = ["tkt_0001", "tkt_0002"]
+    job = store.create_job(tids)
+
+    release_event = asyncio.Event()
+
+    class StallingProvider:
+        name = "stalling"
+
+        async def extract(self, ticket: Ticket, *, attempt: int, **kwargs) -> str:
+            await release_event.wait()
+            return _valid_json()
+
+    task = store.start_job(job, provider=StallingProvider())
+    await asyncio.sleep(0.02)
+    assert job.status == "running"
+
+    cancelled_job = store.cancel_job(job.id)
+    assert cancelled_job.status == "cancelled"
+    for it in cancelled_job.items.values():
+        assert it.status == "cancelled"
+
+    # Release worker coroutines
+    release_event.set()
+    await task
+
+    # Verify task completing did not overwrite status back to done
+    assert job.status == "cancelled"
+    for it in job.items.values():
+        assert it.status == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_cancel_already_finished_job_raises_409():
+    """Cancelling a completed job returns 409 and does not flip done to cancelled."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
+        assert resp.status_code == 202
+        job_id = resp.json()["job_id"]
+
+        # Wait for completion
+        for _ in range(50):
+            job_resp = await client.get(f"/api/jobs/{job_id}")
+            if job_resp.json()["status"] == "done":
+                break
+            await asyncio.sleep(0.05)
+
+        # Attempt to cancel finished job
+        cancel_resp = await client.post(f"/api/jobs/{job_id}/cancel")
+        assert cancel_resp.status_code == 409
+
+        # Status remains done
+        job_resp = await client.get(f"/api/jobs/{job_id}")
+        assert job_resp.json()["status"] == "done"
+
+

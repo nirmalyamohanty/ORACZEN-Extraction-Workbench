@@ -266,3 +266,44 @@ async def test_rerun_record_preview_mode_does_not_mutate():
 
         # But in actual job_store, item is NOT changed
         assert item.record.company == "Custom Human Company"
+
+
+@pytest.mark.asyncio
+async def test_patch_nonexistent_record_returns_404():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Patch on nonexistent record with invalid field should return 404, not 422
+        patch_res = await client.patch(
+            "/api/records/rec_nonexistent_0000",
+            json={"fields": {"non_existent_field": "invalid"}},
+        )
+        assert patch_res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_failed_rerun_does_not_wipe_data():
+    """When a rerun fails (e.g., ticket fails extraction twice), existing valid data must not be wiped to None."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Create a valid job first with tkt_0001
+        res = await client.post("/api/jobs", json={"ticket_ids": ["tkt_0001"]})
+        job_id = res.json()["job_id"]
+        job = job_store.jobs[job_id]
+        while job.status != "done":
+            import asyncio
+            await asyncio.sleep(0.05)
+
+        item = job.items["tkt_0001"]
+        rec_id = item.record_id
+        assert item.record is not None
+        saved_company = item.record.company
+
+        # Simulate rerunning with a failing provider or failing ticket ID
+        item.ticket_id = "tkt_0042"  # mock_fail_twice ticket
+        rerun_res = await client.post(f"/api/records/{rec_id}/rerun", json={})
+        assert rerun_res.status_code == 200
+        data = rerun_res.json()
+
+        # The rerun failed so status is needs_review, but draft retains company
+        assert data["item"]["draft"]["company"] == saved_company
+

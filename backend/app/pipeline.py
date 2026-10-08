@@ -107,25 +107,13 @@ def _apply_grounding_check(
     customer_text: str,
     flags: list[Flag],
 ) -> None:
-    """Override model claims when evidence is missing or not in customer text."""
+    """Override model claims when quoted evidence is not present in customer text."""
     haystack = customer_text.lower()
-    data = record.model_dump()
     existing = {(f.field, f.code) for f in flags}
 
     for fname, meta in list(field_meta.items()):
-        value = data.get(fname)
-        if value is None and fname in ("product", "severity", "refund_amount", "deadline"):
-            continue
-
         evidence = meta.evidence
-        ungrounded = False
-        if evidence:
-            if evidence.lower() not in haystack:
-                ungrounded = True
-        elif value is not None:
-            ungrounded = True
-
-        if ungrounded:
+        if evidence and evidence.lower() not in haystack:
             field_meta[fname] = meta.model_copy(update={"grounded": False})
             key = (fname, "ungrounded")
             if key not in existing:
@@ -133,7 +121,7 @@ def _apply_grounding_check(
                     Flag(
                         code="ungrounded",
                         field=fname,
-                        message="Value is not supported by customer text evidence.",
+                        message="Quoted evidence is not found in customer text.",
                     )
                 )
                 existing.add(key)

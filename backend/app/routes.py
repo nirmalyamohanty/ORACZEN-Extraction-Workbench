@@ -102,90 +102,26 @@ def get_job(job_id: str) -> JobResponse:
     )
 
 
-@router.get("/api/jobs/{job_id}/results", response_model=JobResultsResponse)
-def get_job_results(
-    job_id: str,
-    status: str | None = Query(default=None),
-) -> JobResultsResponse:
-    job = job_store.jobs.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    result_items: list[JobResultItem] = []
-    for it in job.items.values():
-        if status and it.status != status:
-            continue
-
-        raw_ticket = ticket_store.get_ticket(it.ticket_id)
-        if raw_ticket is None:
-            snippet = TicketSnippet(
-                subject="",
-                body="",
-                channel="email",
-                received_at=datetime.now(timezone.utc),
-                from_email="",
-            )
-        else:
-            snippet = TicketSnippet(
-                subject=raw_ticket.subject,
-                body=raw_ticket.body,
-                channel=raw_ticket.channel,
-                received_at=raw_ticket.received_at,
-                from_email=raw_ticket.from_email,
-            )
-
-        result_items.append(
-            JobResultItem(
-                ticket_id=it.ticket_id,
-                record_id=it.record_id,
-                status=it.status,
-                attempts=it.attempts,
-                record=it.record,
-                draft=it.draft,
-                field_meta=it.field_meta,
-                flags=it.flags,
-                edited_fields=sorted(it.edited_fields),
-                original_values=it.original_values,
-                resolved=it.resolved,
-                raw_outputs=it.raw_outputs,
-                validation_errors=it.validation_errors,
-                error=it.error,
-                ticket=snippet,
-            )
+def _build_ticket_snippet(ticket_id: str) -> TicketSnippet:
+    raw_ticket = ticket_store.get_ticket(ticket_id)
+    if raw_ticket is None:
+        return TicketSnippet(
+            subject="",
+            body="",
+            channel="email",
+            received_at=datetime.now(timezone.utc),
+            from_email="",
         )
-
-    return JobResultsResponse(
-        job_id=job.id,
-        status=job.status,
-        items=result_items,
+    return TicketSnippet(
+        subject=raw_ticket.subject,
+        body=raw_ticket.body,
+        channel=raw_ticket.channel,
+        received_at=raw_ticket.received_at,
+        from_email=raw_ticket.from_email,
     )
 
 
-
-
-@router.post("/api/jobs/{job_id}/cancel")
-def cancel_job_endpoint(job_id: str) -> dict[str, str]:
-    job = job_store.cancel_job(job_id)
-    return {"status": job.status}
-
-
-@router.patch("/api/records/{record_id}", response_model=JobResultItem)
-def patch_record_endpoint(record_id: str, payload: PatchRecordRequest):
-    errors = validate_patch_fields(payload.fields)
-    if errors:
-        return JSONResponse(status_code=422, content={"errors": errors})
-
-    item = patch_record(record_id, payload.fields)
-
-    raw_ticket = ticket_store.get_ticket(item.ticket_id)
-    snippet = TicketSnippet(
-        subject=raw_ticket.subject if raw_ticket else "",
-        body=raw_ticket.body if raw_ticket else "",
-        channel=raw_ticket.channel if raw_ticket else "email",
-        received_at=raw_ticket.received_at if raw_ticket else datetime.now(timezone.utc),
-        from_email=raw_ticket.from_email if raw_ticket else "",
-    )
-
+def _build_job_result_item(item: Item) -> JobResultItem:
     return JobResultItem(
         ticket_id=item.ticket_id,
         record_id=item.record_id,
@@ -201,8 +137,49 @@ def patch_record_endpoint(record_id: str, payload: PatchRecordRequest):
         raw_outputs=item.raw_outputs,
         validation_errors=item.validation_errors,
         error=item.error,
-        ticket=snippet,
+        ticket=_build_ticket_snippet(item.ticket_id),
     )
+
+
+@router.get("/api/jobs/{job_id}/results", response_model=JobResultsResponse)
+def get_job_results(
+    job_id: str,
+    status: str | None = Query(default=None),
+) -> JobResultsResponse:
+    job = job_store.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    result_items = [
+        _build_job_result_item(it)
+        for it in job.items.values()
+        if not (status and it.status != status)
+    ]
+
+    return JobResultsResponse(
+        job_id=job.id,
+        status=job.status,
+        items=result_items,
+    )
+
+
+@router.post("/api/jobs/{job_id}/cancel")
+def cancel_job_endpoint(job_id: str) -> dict[str, str]:
+    job = job_store.cancel_job(job_id)
+    return {"status": job.status}
+
+
+@router.patch("/api/records/{record_id}", response_model=JobResultItem)
+def patch_record_endpoint(record_id: str, payload: PatchRecordRequest):
+    if record_id not in job_store.records:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    errors = validate_patch_fields(payload.fields)
+    if errors:
+        return JSONResponse(status_code=422, content={"errors": errors})
+
+    item = patch_record(record_id, payload.fields)
+    return _build_job_result_item(item)
 
 
 @router.post("/api/records/{record_id}/rerun", response_model=RerunRecordResponse)
@@ -219,35 +196,8 @@ async def rerun_record_endpoint(
         preview_only=req.preview_only,
     )
 
-    raw_ticket = ticket_store.get_ticket(item.ticket_id)
-    snippet = TicketSnippet(
-        subject=raw_ticket.subject if raw_ticket else "",
-        body=raw_ticket.body if raw_ticket else "",
-        channel=raw_ticket.channel if raw_ticket else "email",
-        received_at=raw_ticket.received_at if raw_ticket else datetime.now(timezone.utc),
-        from_email=raw_ticket.from_email if raw_ticket else "",
-    )
-
-    result_item = JobResultItem(
-        ticket_id=item.ticket_id,
-        record_id=item.record_id,
-        status=item.status,
-        attempts=item.attempts,
-        record=item.record,
-        draft=item.draft,
-        field_meta=item.field_meta,
-        flags=item.flags,
-        edited_fields=sorted(item.edited_fields),
-        original_values=item.original_values,
-        resolved=item.resolved,
-        raw_outputs=item.raw_outputs,
-        validation_errors=item.validation_errors,
-        error=item.error,
-        ticket=snippet,
-    )
-
     return RerunRecordResponse(
-        item=result_item,
+        item=_build_job_result_item(item),
         diff=diff,
         preview=is_preview,
     )
