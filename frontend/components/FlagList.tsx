@@ -24,9 +24,9 @@ export function FlagList({ flags }: FlagListProps) {
   if (!flags || flags.length === 0) return null;
 
   return (
-    <div className="bg-[#fef3c7] border border-[#fde68a] rounded-md p-3.5 space-y-2.5">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309]">
-        <AlertTriangle className="w-3.5 h-3.5 text-[#b45309]" />
+    <div className="bg-[#78350f]/20 border border-[#92400e]/50 rounded-md p-3.5 space-y-2.5">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#fbbf24]">
+        <AlertTriangle className="w-3.5 h-3.5 text-[#fbbf24]" />
         <span>Needs your attention ({flags.length})</span>
       </div>
 
@@ -36,17 +36,17 @@ export function FlagList({ flags }: FlagListProps) {
           return (
             <div
               key={idx}
-              className="text-xs text-[#92400e] bg-white/70 rounded p-2 border border-[#fde68a]/60 space-y-1"
+              className="text-xs text-[#fde68a] bg-[#161922]/80 rounded p-2 border border-[#92400e]/40 space-y-1"
             >
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#b45309]">
+                <span className="font-semibold text-[#fbbf24]">
                   {label}
                 </span>
-                <span className="text-[11px] text-[#6b6b66]">
+                <span className="text-[11px] text-[#94a3b8]">
                   · {flag.field}
                 </span>
               </div>
-              <p className="text-xs text-[#78350f] leading-normal">
+              <p className="text-xs text-[#fde68a]/90 leading-normal">
                 {flag.message}
               </p>
             </div>

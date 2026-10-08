@@ -12,16 +12,7 @@ import { TicketPane } from "@/components/TicketPane";
 import { FieldEditor } from "@/components/FieldEditor";
 import { FlagList } from "@/components/FlagList";
 import { RawOutputPanel } from "@/components/RawOutputPanel";
-import {
-  Download,
-  ArrowLeft,
-  Loader2,
-  AlertCircle,
-  Ban,
-  CheckCircle,
-  RotateCw,
-  HelpCircle,
-} from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { RerunModal } from "@/components/RerunModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 
@@ -200,8 +191,8 @@ export default function JobReviewPage() {
   // Loading state
   if (loading && !job) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-20 text-[#6b6b66] gap-2">
-        <Loader2 className="w-6 h-6 animate-spin text-[#1f4fd8]" />
+      <div className="flex-1 flex flex-col items-center justify-center py-20 text-[#94a3b8] gap-2">
+        <Loader2 className="w-6 h-6 animate-spin text-[#3b82f6]" />
         <p className="text-sm">Loading job {jobId}...</p>
       </div>
     );
@@ -211,12 +202,12 @@ export default function JobReviewPage() {
   if (error && !job) {
     return (
       <div className="flex-1 max-w-xl mx-auto p-8 my-auto text-center space-y-4">
-        <h2 className="text-xl font-semibold text-[#1c1c1a]">Could not load job</h2>
-        <p className="text-sm text-[#6b6b66]">Could not load job</p>
+        <h2 className="text-xl font-semibold text-[#f3f4f6]">Could not load job</h2>
+        <p className="text-sm text-[#94a3b8]">Could not load job</p>
         <div className="pt-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white border border-[#e2e2dd] hover:bg-[#f7f7f5] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-[#f3f4f6] bg-[#161922] border border-[#262a36] hover:bg-[#1e222f] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Tickets</span>
@@ -235,16 +226,16 @@ export default function JobReviewPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="p-1.5 rounded-md bg-white border border-[#e2e2dd] text-[#6b6b66] hover:text-[#1c1c1a] hover:bg-[#f7f7f5] transition-colors"
+            className="p-1.5 rounded-md bg-[#161922] border border-[#262a36] text-[#94a3b8] hover:text-[#f3f4f6] hover:bg-[#1e222f] transition-colors"
             title="Return to Tickets"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight text-[#1c1c1a]">
+            <h1 className="text-xl font-semibold tracking-tight text-[#f3f4f6]">
               Review
             </h1>
-            <span className="font-mono text-xs text-[#6b6b66]">
+            <span className="font-mono text-xs text-[#94a3b8]">
               {jobId}
             </span>
           </div>
@@ -254,7 +245,7 @@ export default function JobReviewPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsShortcutsOpen(true)}
-            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#f3f4f6] bg-[#161922] hover:bg-[#1e222f] border border-[#262a36] transition-colors cursor-pointer"
             title="Keyboard shortcuts (?)"
           >
             Shortcuts (?)
@@ -263,7 +254,7 @@ export default function JobReviewPage() {
           {job && (job.status === "queued" || job.status === "running") && (
             <button
               onClick={handleCancelJob}
-              className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#b91c1c] bg-white hover:bg-[#fee2e2] border border-[#fecaca] transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#f87171] bg-[#161922] hover:bg-[#7f1d1d]/30 border border-[#b91c1c]/50 transition-colors cursor-pointer"
             >
               Cancel job
             </button>
@@ -272,7 +263,7 @@ export default function JobReviewPage() {
           <a
             href={exportUrl}
             download
-            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#f3f4f6] bg-[#161922] hover:bg-[#1e222f] border border-[#262a36] transition-colors cursor-pointer"
           >
             Export CSV
           </a>
@@ -308,7 +299,7 @@ export default function JobReviewPage() {
               {/* Toast & Flags */}
               <div className="space-y-2">
                 {saveSuccessMsg && (
-                  <div className="text-xs text-[#6b6b66] py-1">
+                  <div className="text-xs text-[#94a3b8] py-1">
                     {saveSuccessMsg}
                   </div>
                 )}
@@ -330,23 +321,23 @@ export default function JobReviewPage() {
                 </div>
 
                 {/* Extracted Fields Editor */}
-                <div className="bg-white border border-[#e2e2dd] rounded-md p-4 space-y-4">
-                  <div className="border-b border-[#e2e2dd] pb-2 flex items-center justify-between">
+                <div className="bg-[#161922] border border-[#262a36] rounded-md p-4 space-y-4">
+                  <div className="border-b border-[#262a36] pb-2 flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-[#1c1c1a] text-sm">
+                      <h3 className="font-semibold text-[#f3f4f6] text-sm">
                         Extracted Fields
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
                       {isSaving && (
-                        <span className="text-xs text-[#6b6b66]">
+                        <span className="text-xs text-[#94a3b8]">
                           Saving...
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => setIsRerunOpen(true)}
-                        className="px-2.5 py-1 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
+                        className="px-2.5 py-1 rounded-md text-xs font-semibold text-[#f3f4f6] bg-[#161922] hover:bg-[#1e222f] border border-[#262a36] transition-colors cursor-pointer"
                         title="Re-run extraction pipeline for this record"
                       >
                         Re-run
@@ -380,7 +371,7 @@ export default function JobReviewPage() {
               />
             </>
           ) : (
-            <div className="p-12 border border-[#e2e2dd] rounded-md bg-white text-center text-[#6b6b66] text-sm">
+            <div className="p-12 border border-[#262a36] rounded-md bg-[#161922] text-center text-[#94a3b8] text-sm">
               Select a ticket from the left column to view raw content and review fields.
             </div>
           )}

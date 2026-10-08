@@ -5,13 +5,13 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function Badge({ tone = "neutral", className = "", children, ...props }: BadgeProps) {
-  let toneStyles = "bg-[#f3f4f6] text-[#4b5563] border-[#e5e7eb]";
+  let toneStyles = "bg-[#1e222f] text-[#94a3b8] border-[#2e3344]";
   if (tone === "amber") {
-    toneStyles = "bg-[#fef3c7] text-[#b45309] border-[#fde68a]";
+    toneStyles = "bg-[#78350f]/30 text-[#fbbf24] border-[#92400e]/50";
   } else if (tone === "red") {
-    toneStyles = "bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]";
+    toneStyles = "bg-[#7f1d1d]/30 text-[#f87171] border-[#b91c1c]/50";
   } else if (tone === "green") {
-    toneStyles = "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]";
+    toneStyles = "bg-[#064e3b]/30 text-[#34d399] border-[#059669]/50";
   }
 
   return (

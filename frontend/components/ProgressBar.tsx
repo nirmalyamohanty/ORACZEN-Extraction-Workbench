@@ -1,5 +1,4 @@
 import { JobProgress, JobStatus } from "@/lib/types";
-import { StatusBadge } from "./StatusBadge";
 
 interface ProgressBarProps {
   progress?: JobProgress;
@@ -31,27 +30,27 @@ export function ProgressBar({
       : "Queued";
 
   return (
-    <div className="bg-white border border-[#e2e2dd] rounded-md p-4 space-y-2">
+    <div className="bg-[#161922] border border-[#262a36] rounded-md p-4 space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-[#1c1c1a]">
+        <span className="font-semibold text-[#f3f4f6]">
           {progress.finished} of {progress.total} processed
         </span>
-        <span className="text-xs font-semibold text-[#6b6b66]">
+        <span className="text-xs font-semibold text-[#94a3b8]">
           {statusLabel}
         </span>
       </div>
 
-      {/* Flat 8px bar: grey track, solid blue fill */}
-      <div className="w-full h-2 bg-[#e5e7eb] rounded-md overflow-hidden">
+      {/* Flat 8px bar: dark grey track, solid blue fill */}
+      <div className="w-full h-2 bg-[#262a36] rounded-md overflow-hidden">
         <div
-          className="h-full bg-[#1f4fd8] rounded-md"
+          className="h-full bg-[#3b82f6] rounded-md transition-all duration-300"
           style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
         />
       </div>
 
       {/* Counts line in exact form: Queued 100 · Running 4 · Done 40 · Needs review 4 · Failed 2 */}
       {countParts.length > 0 && (
-        <div className="text-xs text-[#6b6b66]">
+        <div className="text-xs text-[#94a3b8]">
           {countParts.join(" · ")}
         </div>
       )}

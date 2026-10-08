@@ -111,7 +111,7 @@ export function FieldEditor({
           <div
             role="alert"
             data-testid={`error-${field}`}
-            className="flex items-center gap-1.5 text-xs text-[#b91c1c] font-medium bg-[#fee2e2] px-2 py-1 rounded border border-[#fecaca]"
+            className="flex items-center gap-1.5 text-xs text-[#f87171] font-medium bg-[#7f1d1d]/30 px-2 py-1 rounded border border-[#b91c1c]/50"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{errorMsg}</span>
@@ -119,44 +119,44 @@ export function FieldEditor({
         )}
 
         {/* Minimal metadata pills */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6b6b66]">
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#94a3b8]">
           {meta && (
             <>
               {/* Confidence */}
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f7f7f5] border border-[#e2e2dd] text-[#1c1c1a]">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#1e222f] border border-[#2e3344] text-[#f3f4f6]">
                 <span>{Math.round(meta.confidence * 100)}%</span>
-                <span className="text-[#6b6b66]">conf</span>
+                <span className="text-[#94a3b8]">conf</span>
               </span>
 
               {/* Source badge */}
               {isEdited || meta.source === "human" ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#eff6ff] border border-[#dbeafe] text-[#1d4ed8] font-medium">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#1e3a8a]/40 border border-[#1d4ed8]/50 text-[#93c5fd] font-medium">
                   edited by reviewer
                 </span>
               ) : meta.grounded ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#f7f7f5] border border-[#e2e2dd] text-[#4b5563]">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#1e222f] border border-[#2e3344] text-[#94a3b8]">
                   model
                 </span>
               ) : meta.note?.includes("domain") ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fef3c7] border border-[#fde68a] text-[#b45309] font-medium">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#78350f]/35 border border-[#92400e]/50 text-[#fbbf24] font-medium">
                   inferred
                 </span>
               ) : (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fee2e2] border border-[#fecaca] text-[#b91c1c] font-medium">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#7f1d1d]/35 border border-[#b91c1c]/50 text-[#f87171] font-medium">
                   ungrounded
                 </span>
               )}
 
               {/* Note */}
               {meta.note && (
-                <span className="text-[#6b6b66] italic">({meta.note})</span>
+                <span className="text-[#94a3b8] italic">({meta.note})</span>
               )}
             </>
           )}
 
           {/* Original value hint if touched */}
           {isEdited && origVal !== undefined && (
-            <span className="text-[#6b6b66] ml-auto text-[10px]">
+            <span className="text-[#64748b] ml-auto text-[10px]">
               orig: {origVal === null ? "null" : String(origVal)}
             </span>
           )}
@@ -164,8 +164,8 @@ export function FieldEditor({
 
         {/* Evidence quote */}
         {meta?.evidence && (
-          <div className="flex items-start gap-1 text-[11px] text-[#6b6b66] italic bg-[#f7f7f5] px-2 py-1 rounded border border-[#e2e2dd]">
-            <Quote className="w-3 h-3 text-[#9ca3af] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-1 text-[11px] text-[#94a3b8] italic bg-[#0d0f14] px-2 py-1 rounded border border-[#262a36]">
+            <Quote className="w-3 h-3 text-[#64748b] shrink-0 mt-0.5" />
             <span className="line-clamp-2">{meta.evidence}</span>
           </div>
         )}
@@ -174,17 +174,17 @@ export function FieldEditor({
   };
 
   const inputClass = (hasError: boolean) =>
-    `w-full px-3 py-1.5 rounded-md bg-white border text-sm text-[#1c1c1a] focus:outline-none focus:ring-1 focus:ring-[#1f4fd8] transition-colors ${
-      hasError ? "border-[#b91c1c]" : "border-[#e2e2dd]"
+    `w-full px-3 py-1.5 rounded-md bg-[#0d0f14] border text-sm text-[#f3f4f6] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors ${
+      hasError ? "border-[#ef4444]" : "border-[#262a36]"
     }`;
 
   return (
     <div className="space-y-3.5">
       {/* Company */}
       <div className="space-y-1">
-        <label htmlFor="field-company" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-company" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Company *</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
         </label>
         <input
           type="text"
@@ -206,9 +206,9 @@ export function FieldEditor({
 
       {/* Product */}
       <div className="space-y-1">
-        <label htmlFor="field-product" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-product" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Product</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
         </label>
         <select
           id="field-product"
@@ -223,21 +223,21 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("product", e)}
           className={inputClass(Boolean(fieldErrors.product))}
         >
-          <option value="">(not stated)</option>
-          <option value="Zen Orchestrator">Zen Orchestrator</option>
-          <option value="Zen Studio">Zen Studio</option>
-          <option value="Zen Connect">Zen Connect</option>
-          <option value="Zen Insights">Zen Insights</option>
-          <option value="Zen Vault">Zen Vault</option>
+          <option value="" className="bg-[#161922] text-[#f3f4f6]">(not stated)</option>
+          <option value="Zen Orchestrator" className="bg-[#161922] text-[#f3f4f6]">Zen Orchestrator</option>
+          <option value="Zen Studio" className="bg-[#161922] text-[#f3f4f6]">Zen Studio</option>
+          <option value="Zen Connect" className="bg-[#161922] text-[#f3f4f6]">Zen Connect</option>
+          <option value="Zen Insights" className="bg-[#161922] text-[#f3f4f6]">Zen Insights</option>
+          <option value="Zen Vault" className="bg-[#161922] text-[#f3f4f6]">Zen Vault</option>
         </select>
         {renderFieldFooter("product")}
       </div>
 
       {/* Category */}
       <div className="space-y-1">
-        <label htmlFor="field-category" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-category" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Category *</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
         </label>
         <select
           id="field-category"
@@ -252,22 +252,22 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("category", e)}
           className={inputClass(Boolean(fieldErrors.category))}
         >
-          <option value="">(select category)</option>
-          <option value="outage">outage</option>
-          <option value="billing">billing</option>
-          <option value="bug">bug</option>
-          <option value="feature_request">feature_request</option>
-          <option value="how_to">how_to</option>
-          <option value="churn_risk">churn_risk</option>
+          <option value="" className="bg-[#161922] text-[#f3f4f6]">(select category)</option>
+          <option value="outage" className="bg-[#161922] text-[#f3f4f6]">outage</option>
+          <option value="billing" className="bg-[#161922] text-[#f3f4f6]">billing</option>
+          <option value="bug" className="bg-[#161922] text-[#f3f4f6]">bug</option>
+          <option value="feature_request" className="bg-[#161922] text-[#f3f4f6]">feature_request</option>
+          <option value="how_to" className="bg-[#161922] text-[#f3f4f6]">how_to</option>
+          <option value="churn_risk" className="bg-[#161922] text-[#f3f4f6]">churn_risk</option>
         </select>
         {renderFieldFooter("category")}
       </div>
 
       {/* Severity */}
       <div className="space-y-1">
-        <label htmlFor="field-severity" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-severity" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Severity</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
         </label>
         <select
           id="field-severity"
@@ -282,20 +282,20 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("severity", e)}
           className={inputClass(Boolean(fieldErrors.severity))}
         >
-          <option value="">(not stated)</option>
-          <option value="low">low</option>
-          <option value="medium">medium</option>
-          <option value="high">high</option>
-          <option value="critical">critical</option>
+          <option value="" className="bg-[#161922] text-[#f3f4f6]">(not stated)</option>
+          <option value="low" className="bg-[#161922] text-[#f3f4f6]">low</option>
+          <option value="medium" className="bg-[#161922] text-[#f3f4f6]">medium</option>
+          <option value="high" className="bg-[#161922] text-[#f3f4f6]">high</option>
+          <option value="critical" className="bg-[#161922] text-[#f3f4f6]">critical</option>
         </select>
         {renderFieldFooter("severity")}
       </div>
 
       {/* Requested Action */}
       <div className="space-y-1">
-        <label htmlFor="field-requested_action" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-requested_action" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Requested Action *</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
         </label>
         <select
           id="field-requested_action"
@@ -310,22 +310,22 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("requested_action", e)}
           className={inputClass(Boolean(fieldErrors.requested_action))}
         >
-          <option value="">(select action)</option>
-          <option value="refund">refund</option>
-          <option value="credit">credit</option>
-          <option value="fix">fix</option>
-          <option value="callback">callback</option>
-          <option value="information">information</option>
-          <option value="none">none</option>
+          <option value="" className="bg-[#161922] text-[#f3f4f6]">(select action)</option>
+          <option value="refund" className="bg-[#161922] text-[#f3f4f6]">refund</option>
+          <option value="credit" className="bg-[#161922] text-[#f3f4f6]">credit</option>
+          <option value="fix" className="bg-[#161922] text-[#f3f4f6]">fix</option>
+          <option value="callback" className="bg-[#161922] text-[#f3f4f6]">callback</option>
+          <option value="information" className="bg-[#161922] text-[#f3f4f6]">information</option>
+          <option value="none" className="bg-[#161922] text-[#f3f4f6]">none</option>
         </select>
         {renderFieldFooter("requested_action")}
       </div>
 
       {/* Refund Amount (USD) */}
       <div className="space-y-1">
-        <label htmlFor="field-refund_amount" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-refund_amount" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Refund Amount (USD)</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
         </label>
         <input
           type="number"
@@ -348,9 +348,9 @@ export function FieldEditor({
 
       {/* Deadline */}
       <div className="space-y-1">
-        <label htmlFor="field-deadline" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
+        <label htmlFor="field-deadline" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
           <span>Deadline</span>
-          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
+          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
         </label>
         <input
           type="date"
@@ -370,15 +370,15 @@ export function FieldEditor({
       </div>
 
       {/* Escalated */}
-      <div className="p-3 rounded-md bg-white border border-[#e2e2dd] flex items-center justify-between">
+      <div className="p-3 rounded-md bg-[#161922] border border-[#262a36] flex items-center justify-between">
         <div>
           <label
             htmlFor="field-escalated"
-            className="text-xs font-semibold text-[#1c1c1a] cursor-pointer select-none"
+            className="text-xs font-semibold text-[#f3f4f6] cursor-pointer select-none"
           >
             Escalated
           </label>
-          <p className="text-[11px] text-[#6b6b66]">
+          <p className="text-[11px] text-[#94a3b8]">
             Check if customer indicated executive escalation or churn risk
           </p>
         </div>
@@ -391,7 +391,7 @@ export function FieldEditor({
             handleChange("escalated", e.target.checked);
             onPatchField("escalated", e.target.checked);
           }}
-          className="w-4 h-4 rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8] cursor-pointer"
+          className="w-4 h-4 rounded border-[#262a36] bg-[#0d0f14] text-[#3b82f6] focus:ring-[#3b82f6] cursor-pointer"
         />
       </div>
       {renderFieldFooter("escalated")}

@@ -1,7 +1,6 @@
 import React from "react";
 
 export function OraczenIcon({ className = "w-5 h-5", color = "currentColor" }: { className?: string; color?: string }) {
-  // 8 radial teardrop nodes connected to a central hub
   return (
     <svg
       viewBox="0 0 24 24"
@@ -36,8 +35,8 @@ export function OraczenIcon({ className = "w-5 h-5", color = "currentColor" }: {
 export function OraczenLogo({ className = "h-5" }: { className?: string }) {
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      <OraczenIcon className="w-5 h-5 text-[#1c1c1a]" />
-      <span className="font-bold tracking-tight text-[#1c1c1a] text-[15px] font-sans">
+      <OraczenIcon className="w-5 h-5 text-[#f3f4f6]" />
+      <span className="font-bold tracking-tight text-[#f3f4f6] text-[15px] font-sans">
         Oraczen
       </span>
     </div>

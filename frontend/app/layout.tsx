@@ -15,20 +15,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full bg-[#f7f7f5] text-[#1c1c1a]">
-      <body className="min-h-full flex flex-col font-sans antialiased">
-        <header className="sticky top-0 z-40 border-b border-[#e2e2dd] bg-white px-6 py-2.5 flex items-center justify-between">
+    <html lang="en" className="h-full bg-[#0f1117] text-[#f3f4f6]">
+      <body className="min-h-full flex flex-col font-sans antialiased bg-[#0f1117] text-[#f3f4f6]">
+        <header className="sticky top-0 z-40 border-b border-[#262a36] bg-[#161922] px-6 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
               <OraczenLogo />
-              <span className="text-xs text-[#e2e2dd]">|</span>
-              <span className="text-xs font-medium text-[#6b6b66]">
+              <span className="text-xs text-[#262a36]">|</span>
+              <span className="text-xs font-medium text-[#94a3b8]">
                 Extraction Workbench
               </span>
             </Link>
           </div>
-          <div className="flex items-center gap-2 text-xs text-[#6b6b66]">
-            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
+          <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
+            <span className="w-2 h-2 rounded-full bg-[#34d399]"></span>
             <span>API connected</span>
           </div>
         </header>

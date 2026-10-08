@@ -1,7 +1,6 @@
 "use client";
 
 import { Channel } from "@/lib/types";
-import { Search, Filter, CheckSquare, Square, Paperclip } from "lucide-react";
 
 interface TicketFiltersProps {
   searchQuery: string;
@@ -37,16 +36,16 @@ export function TicketFilters({
   ];
 
   return (
-    <div className="bg-white border border-[#e2e2dd] rounded-md p-3 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <div className="bg-[#161922] border border-[#262a36] rounded-md p-3 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
       <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {/* Search input */}
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search subject or ticket body..."
+            placeholder="Search ticket ID, subject, email or body..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-3 py-1.5 bg-white border border-[#e2e2dd] rounded-md text-sm text-[#1c1c1a] placeholder-[#6b6b66] focus:outline-none focus:ring-2 focus:ring-[#1f4fd8] transition-colors"
+            className="w-full px-3 py-1.5 bg-[#0d0f14] border border-[#262a36] rounded-md text-sm text-[#f3f4f6] placeholder-[#64748b] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors"
           />
         </div>
 
@@ -55,10 +54,10 @@ export function TicketFilters({
           <select
             value={selectedChannel}
             onChange={(e) => onChannelChange(e.target.value)}
-            className="w-full px-3 py-1.5 bg-white border border-[#e2e2dd] rounded-md text-sm text-[#1c1c1a] focus:outline-none focus:ring-2 focus:ring-[#1f4fd8] cursor-pointer"
+            className="w-full px-3 py-1.5 bg-[#0d0f14] border border-[#262a36] rounded-md text-sm text-[#f3f4f6] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] cursor-pointer"
           >
             {channels.map((c) => (
-              <option key={c.value} value={c.value}>
+              <option key={c.value} value={c.value} className="bg-[#161922] text-[#f3f4f6]">
                 {c.label}
               </option>
             ))}
@@ -66,23 +65,23 @@ export function TicketFilters({
         </div>
 
         {/* Attachments filter */}
-        <label className="flex items-center gap-2 text-sm text-[#1c1c1a] cursor-pointer select-none whitespace-nowrap">
+        <label className="flex items-center gap-2 text-sm text-[#94a3b8] hover:text-[#f3f4f6] cursor-pointer select-none whitespace-nowrap">
           <input
             type="checkbox"
             checked={hasAttachmentsOnly}
             onChange={(e) => onAttachmentsOnlyChange(e.target.checked)}
-            className="rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8] cursor-pointer"
+            className="rounded border-[#262a36] bg-[#0d0f14] text-[#3b82f6] focus:ring-[#3b82f6] cursor-pointer"
           />
           <span>Has attachments</span>
         </label>
       </div>
 
       {/* Bulk actions */}
-      <div className="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[#e2e2dd]">
+      <div className="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[#262a36]">
         <button
           type="button"
           onClick={onSelectAll}
-          className="px-3 py-1.5 text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] rounded-md border border-[#e2e2dd] transition-colors cursor-pointer"
+          className="px-3 py-1.5 text-xs font-semibold text-[#f3f4f6] bg-[#161922] hover:bg-[#1e222f] rounded-md border border-[#262a36] transition-colors cursor-pointer"
         >
           Select all matching ({totalFiltered})
         </button>
@@ -91,7 +90,7 @@ export function TicketFilters({
           <button
             type="button"
             onClick={onClearSelection}
-            className="px-2 py-1.5 text-xs text-[#6b6b66] hover:text-[#1c1c1a] transition-colors cursor-pointer"
+            className="px-2 py-1.5 text-xs text-[#94a3b8] hover:text-[#f3f4f6] transition-colors cursor-pointer"
           >
             Clear ({selectedCount})
           </button>
