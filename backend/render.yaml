@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: extraction-workbench-api
+    runtime: python
+    region: oregon
+
+    # install deps then start with one worker — in-memory state means multi-worker breaks state sharing
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+
+    healthCheckPath: /health
+
+    envVars:
+      # mock provider is the default — no API key needed
+      - key: PROVIDER
+        value: mock
+      - key: MAX_CONCURRENCY
+        value: "4"
+      - key: MOCK_DELAY_MIN_MS
+        value: "300"
+      - key: MOCK_DELAY_MAX_MS
+        value: "1200"
+      - key: MOCK_FAIL_ONCE_IDS
+        value: "tkt_0017,tkt_0063"
+      - key: MOCK_FAIL_TWICE_IDS
+        value: "tkt_0042,tkt_0121"
+      - key: TICKETS_PATH
+        value: data/tickets.jsonl
+      # FRONTEND_ORIGINS: update to your Vercel URL after frontend is deployed
+      - key: FRONTEND_ORIGINS
+        value: http://localhost:3000

@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 
 from app import tickets as ticket_store
+from app.config import settings
 from app.jobs import Item, job_store
 from app.records import generate_job_csv, patch_record, rerun_record, validate_patch_fields
 from app.schemas import (
@@ -27,13 +28,15 @@ router = APIRouter()
 
 @router.get("/")
 def root() -> dict[str, str]:
+    # pull the first allowed origin so the root response reflects the real deployed URL
+    frontend_url = settings.frontend_origin_list()[0] if settings.frontend_origin_list() else "http://localhost:3000"
     return {
         "name": "Extraction Workbench API",
         "status": "ok",
         "docs_url": "/docs",
         "health_url": "/health",
-        "frontend_url": "http://localhost:3000",
-        "message": "Visit http://localhost:3000 to use the Extraction Workbench frontend, or /docs for API documentation.",
+        "frontend_url": frontend_url,
+        "message": f"Visit {frontend_url} to use the Extraction Workbench frontend, or /docs for API documentation.",
     }
 
 
