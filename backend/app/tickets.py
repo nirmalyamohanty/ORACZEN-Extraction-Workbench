@@ -59,7 +59,12 @@ def list_tickets(
         items = [
             t
             for t in items
-            if needle in t.subject.lower() or needle in t.body.lower()
+            if (
+                needle in t.id.lower()
+                or needle in t.subject.lower()
+                or needle in t.body.lower()
+                or needle in t.from_email.lower()
+            )
         ]
     total = len(items)
     items.sort(key=lambda t: t.received_at, reverse=True)

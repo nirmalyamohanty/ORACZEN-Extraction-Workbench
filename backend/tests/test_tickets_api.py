@@ -52,3 +52,19 @@ async def test_health():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/health")
     assert resp.json() == {"status": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_search_tickets_by_id_and_email():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Search by 'tkt' matches all 150 tickets
+        resp = await client.get("/api/tickets?q=tkt")
+        assert resp.status_code == 200
+        assert resp.json()["total"] == 150
+
+        # Search by specific ID
+        resp_single = await client.get("/api/tickets?q=tkt_0089")
+        assert resp_single.status_code == 200
+        assert resp_single.json()["total"] == 1
+        assert resp_single.json()["items"][0]["id"] == "tkt_0089"
