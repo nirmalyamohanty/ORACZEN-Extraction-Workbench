@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md";
 }
 
@@ -17,8 +17,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variantStyles = "bg-[#1f4fd8] text-white hover:bg-[#173eb0]";
     } else if (variant === "danger") {
       variantStyles = "bg-white border border-[#fecaca] text-[#b91c1c] hover:bg-[#fee2e2]";
+    } else if (variant === "ghost") {
+      variantStyles = "bg-transparent text-[#6b6b66] hover:text-[#1c1c1a] hover:bg-[#f7f7f5]";
     } else {
-      // secondary
+      // secondary / outline
       variantStyles = "bg-white border border-[#e2e2dd] text-[#1c1c1a] hover:bg-[#f7f7f5]";
     }
 

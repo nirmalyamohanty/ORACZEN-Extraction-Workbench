@@ -12,51 +12,49 @@ export function ProgressBar({
 }: ProgressBarProps) {
   if (!progress) return null;
 
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <StatusBadge status={status} />
-          <span className="text-sm font-semibold text-white">
-            {progress.finished} of {progress.total} processed ({progress.percent}%)
-          </span>
-        </div>
+  // Format counts: "Queued 100 · Running 4 · Done 40 · Needs review 4 · Failed 2", omitting 0s
+  const countParts: string[] = [];
+  if (progress.queued > 0) countParts.push(`Queued ${progress.queued}`);
+  if (progress.running > 0) countParts.push(`Running ${progress.running}`);
+  if (progress.done > 0) countParts.push(`Done ${progress.done}`);
+  if (progress.needs_review > 0) countParts.push(`Needs review ${progress.needs_review}`);
+  if (progress.failed > 0) countParts.push(`Failed ${progress.failed}`);
+  if (progress.cancelled > 0) countParts.push(`Cancelled ${progress.cancelled}`);
 
-        {/* Breakdown counts */}
-        <div className="flex items-center flex-wrap gap-2 text-xs">
-          {progress.running > 0 && (
-            <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-300 font-medium">
-              {progress.running} running
-            </span>
-          )}
-          {progress.queued > 0 && (
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 font-medium">
-              {progress.queued} queued
-            </span>
-          )}
-          <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
-            {progress.done} done
-          </span>
-          {progress.needs_review > 0 && (
-            <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
-              {progress.needs_review} needs review
-            </span>
-          )}
-          {progress.failed > 0 && (
-            <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-400 font-medium">
-              {progress.failed} failed
-            </span>
-          )}
-        </div>
+  const statusLabel =
+    status === "running"
+      ? "Running"
+      : status === "done"
+      ? "Done"
+      : status === "cancelled"
+      ? "Cancelled"
+      : "Queued";
+
+  return (
+    <div className="bg-white border border-[#e2e2dd] rounded-md p-4 space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-semibold text-[#1c1c1a]">
+          {progress.finished} of {progress.total} processed
+        </span>
+        <span className="text-xs font-semibold text-[#6b6b66]">
+          {statusLabel}
+        </span>
       </div>
 
-      {/* Progress track */}
-      <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative">
+      {/* Flat 8px bar: grey track, solid blue fill */}
+      <div className="w-full h-2 bg-[#e5e7eb] rounded-md overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-400 transition-all duration-300 rounded-full"
+          className="h-full bg-[#1f4fd8] rounded-md"
           style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
         />
       </div>
+
+      {/* Counts line in exact form: Queued 100 · Running 4 · Done 40 · Needs review 4 · Failed 2 */}
+      {countParts.length > 0 && (
+        <div className="text-xs text-[#6b6b66]">
+          {countParts.join(" · ")}
+        </div>
+      )}
     </div>
   );
 }

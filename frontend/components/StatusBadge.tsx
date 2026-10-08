@@ -10,24 +10,24 @@ export function StatusBadge({ status, resolved }: StatusBadgeProps) {
   if (status === "needs_review") {
     if (resolved) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-          <span>Needs Review (Resolved)</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]">
+          <CheckCircle2 className="w-3 h-3 text-[#166534]" />
+          <span>Resolved</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-300 border-2 border-amber-500/50 shadow-sm shadow-amber-500/10 animate-pulse">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-        <span>NEEDS REVIEW</span>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-[#fef3c7] text-[#b45309] border border-[#fde68a]">
+        <AlertTriangle className="w-3 h-3 text-[#b45309]" />
+        <span>Needs review</span>
       </span>
     );
   }
 
   if (status === "done") {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-[#166534]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#166534]" />
         <span>Done</span>
       </span>
     );
@@ -35,8 +35,8 @@ export function StatusBadge({ status, resolved }: StatusBadgeProps) {
 
   if (status === "failed") {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30">
-        <XCircle className="w-3 h-3 text-rose-400" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]">
+        <XCircle className="w-3 h-3 text-[#b91c1c]" />
         <span>Failed</span>
       </span>
     );
@@ -44,8 +44,8 @@ export function StatusBadge({ status, resolved }: StatusBadgeProps) {
 
   if (status === "running") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
-        <Loader2 className="w-3 h-3 animate-spin text-sky-400" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#e0f2fe] text-[#0369a1] border border-[#bae6fd]">
+        <Loader2 className="w-3 h-3 animate-spin text-[#0284c7]" />
         <span>Running</span>
       </span>
     );
@@ -53,7 +53,7 @@ export function StatusBadge({ status, resolved }: StatusBadgeProps) {
 
   if (status === "cancelled") {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#f3f4f6] text-[#4b5563] border border-[#e5e7eb]">
         <Ban className="w-3 h-3" />
         <span>Cancelled</span>
       </span>
@@ -61,7 +61,7 @@ export function StatusBadge({ status, resolved }: StatusBadgeProps) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#f3f4f6] text-[#4b5563] border border-[#e5e7eb]">
       <Clock className="w-3 h-3" />
       <span>Queued</span>
     </span>

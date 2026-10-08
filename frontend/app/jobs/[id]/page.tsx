@@ -200,9 +200,9 @@ export default function JobReviewPage() {
   // Loading state
   if (loading && !job) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-32 text-slate-400 gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <p className="text-sm font-medium">Loading job {jobId}...</p>
+      <div className="flex-1 flex flex-col items-center justify-center py-20 text-[#6b6b66] gap-2">
+        <Loader2 className="w-6 h-6 animate-spin text-[#1f4fd8]" />
+        <p className="text-sm">Loading job {jobId}...</p>
       </div>
     );
   }
@@ -210,18 +210,15 @@ export default function JobReviewPage() {
   // 404 or Error state
   if (error && !job) {
     return (
-      <div className="flex-1 max-w-2xl mx-auto p-8 my-auto text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="text-xl font-bold text-white">Could not load job</h2>
-        <p className="text-sm text-slate-400">Could not load job</p>
+      <div className="flex-1 max-w-xl mx-auto p-8 my-auto text-center space-y-4">
+        <h2 className="text-xl font-semibold text-[#1c1c1a]">Could not load job</h2>
+        <p className="text-sm text-[#6b6b66]">Could not load job</p>
         <div className="pt-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white border border-[#e2e2dd] hover:bg-[#f7f7f5] transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to Tickets</span>
           </Link>
         </div>
@@ -232,59 +229,52 @@ export default function JobReviewPage() {
   const exportUrl = getExportCsvUrl(jobId);
 
   return (
-    <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-5">
+    <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-4">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-md bg-white border border-[#e2e2dd] text-[#6b6b66] hover:text-[#1c1c1a] hover:bg-[#f7f7f5] transition-colors"
+            title="Return to Tickets"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white tracking-tight">
-                Job Review
-              </h1>
-              <span className="font-mono text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                {jobId}
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Side-by-side verification and inline corrections of model extractions
-            </p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight text-[#1c1c1a]">
+              Review
+            </h1>
+            <span className="font-mono text-xs text-[#6b6b66]">
+              {jobId}
+            </span>
           </div>
         </div>
 
-        {/* Action buttons: Shortcuts, Export CSV, Cancel */}
-        <div className="flex items-center gap-2.5">
+        {/* Action buttons: Shortcuts, Cancel, Export CSV */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsShortcutsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
             title="Keyboard shortcuts (?)"
           >
-            <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Shortcuts (?)</span>
+            Shortcuts (?)
           </button>
 
           {job && (job.status === "queued" || job.status === "running") && (
             <button
               onClick={handleCancelJob}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-rose-300 bg-rose-950/30 hover:bg-rose-950/50 border border-rose-800/60 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#b91c1c] bg-white hover:bg-[#fee2e2] border border-[#fecaca] transition-colors cursor-pointer"
             >
-              <Ban className="w-3.5 h-3.5" />
-              <span>Cancel Job</span>
+              Cancel job
             </button>
           )}
 
           <a
             href={exportUrl}
             download
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            Export CSV
           </a>
         </div>
       </div>
@@ -298,7 +288,7 @@ export default function JobReviewPage() {
       )}
 
       {/* Main Two-Column Review Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left column: Items List (4 cols) */}
         <div className="lg:col-span-4 h-[750px]">
           <ItemList
@@ -315,16 +305,15 @@ export default function JobReviewPage() {
         <div className="lg:col-span-8 flex flex-col space-y-4">
           {selectedItem ? (
             <>
-              {/* Header of review pane with Flags & Toast */}
-              <div className="space-y-3">
+              {/* Toast & Flags */}
+              <div className="space-y-2">
                 {saveSuccessMsg && (
-                  <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 p-2.5 rounded-lg animate-fade-in">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>{saveSuccessMsg}</span>
+                  <div className="text-xs text-[#6b6b66] py-1">
+                    {saveSuccessMsg}
                   </div>
                 )}
 
-                {/* Flags list at top */}
+                {/* Flags list */}
                 {selectedItem.flags && selectedItem.flags.length > 0 && (
                   <FlagList flags={selectedItem.flags} />
                 )}
@@ -341,31 +330,26 @@ export default function JobReviewPage() {
                 </div>
 
                 {/* Extracted Fields Editor */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
-                  <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
+                <div className="bg-white border border-[#e2e2dd] rounded-md p-4 space-y-4">
+                  <div className="border-b border-[#e2e2dd] pb-2 flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-100 text-sm">
+                      <h3 className="font-semibold text-[#1c1c1a] text-sm">
                         Extracted Fields
                       </h3>
-                      <p className="text-[11px] text-slate-400">
-                        Edit values inline. Press Enter or blur to save.
-                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {isSaving && (
-                        <span className="flex items-center gap-1 text-[11px] text-indigo-400">
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                        <span className="text-xs text-[#6b6b66]">
                           Saving...
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => setIsRerunOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-800/60 transition-colors shadow-sm cursor-pointer"
+                        className="px-2.5 py-1 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
                         title="Re-run extraction pipeline for this record"
                       >
-                        <RotateCw className="w-3 h-3" />
-                        <span>Re-run</span>
+                        Re-run
                       </button>
                     </div>
                   </div>
@@ -387,21 +371,23 @@ export default function JobReviewPage() {
                 </div>
               </div>
 
-              {/* Collapsible Raw Model Outputs for needs_review or transparency */}
+              {/* Collapsible Raw Model Outputs */}
               <RawOutputPanel
                 rawOutputs={selectedItem.raw_outputs || []}
                 validationErrors={selectedItem.validation_errors || []}
+                status={selectedItem.status}
+                attempts={selectedItem.attempts}
               />
             </>
           ) : (
-            <div className="p-16 border border-dashed border-slate-800 rounded-xl text-center text-slate-500 text-sm">
+            <div className="p-12 border border-[#e2e2dd] rounded-md bg-white text-center text-[#6b6b66] text-sm">
               Select a ticket from the left column to view raw content and review fields.
             </div>
           )}
         </div>
       </div>
 
-      {/* Re-run Modal (O3) */}
+      {/* Re-run Modal */}
       {selectedItem && (
         <RerunModal
           isOpen={isRerunOpen}
@@ -419,12 +405,12 @@ export default function JobReviewPage() {
               };
             });
             setSaveSuccessMsg("Re-run completed and applied");
-            setTimeout(() => setSaveSuccessMsg(null), 3000);
+            setTimeout(() => setSaveSuccessMsg(null), 2500);
           }}
         />
       )}
 
-      {/* Keyboard Shortcuts Modal (O4) */}
+      {/* Keyboard Shortcuts Modal */}
       <ShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
