@@ -1,5 +1,7 @@
 import React from "react";
 
+// reusable button component supporting common variant styles & sizes
+// forwardRef allows parent forms or keyboard shortcut hooks to focus this button directly
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md";
@@ -7,27 +9,27 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "secondary", size = "md", className = "", children, ...props }, ref) => {
-    let baseStyles =
-      "inline-flex items-center justify-center font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-[#3b82f6] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
+    const base =
+      "inline-flex items-center justify-center font-medium rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-98 select-none";
 
-    let sizeStyles = size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm";
+    const sizes = size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-xs font-semibold";
 
-    let variantStyles = "";
+    let variant_cls = "";
     if (variant === "primary") {
-      variantStyles = "bg-[#3b82f6] text-white hover:bg-[#2563eb]";
+      variant_cls = "bg-[#15803d] text-white hover:bg-[#166534] shadow-xs";
     } else if (variant === "danger") {
-      variantStyles = "bg-[#161922] border border-[#ef4444]/40 text-[#f87171] hover:bg-[#ef4444]/15";
+      variant_cls = "bg-white border border-[#fecaca] text-[#991b1b] hover:bg-[#fee2e2] shadow-xs";
     } else if (variant === "ghost") {
-      variantStyles = "bg-transparent text-[#94a3b8] hover:text-[#f3f4f6] hover:bg-[#1e222f]";
+      variant_cls = "bg-transparent text-[#57534e] hover:text-[#1c1917] hover:bg-[#f5f2eb]";
     } else {
-      // secondary / outline
-      variantStyles = "bg-[#161922] border border-[#262a36] text-[#f3f4f6] hover:bg-[#1e222f]";
+      // secondary / outline: neutral warm card button with border
+      variant_cls = "bg-white border border-[#eae6de] text-[#1c1917] hover:bg-[#f5f2eb] shadow-xs";
     }
 
     return (
       <button
         ref={ref}
-        className={`${baseStyles} ${sizeStyles} ${variantStyles} ${className}`}
+        className={`${base} ${sizes} ${variant_cls} ${className}`}
         {...props}
       >
         {children}

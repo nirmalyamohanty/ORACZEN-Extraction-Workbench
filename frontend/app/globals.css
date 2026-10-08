@@ -1,40 +1,89 @@
 @import "tailwindcss";
 
+/*
+  warm engineering workbench theme (inspired by Claude / Linear light mode):
+  - warm tinted paper background (#fbf9f5) rather than clinical sterile white or muddy gray
+  - crisp white cards with fine warm borders (#eae6de)
+  - stone/ink typography for high contrast without harsh pure-black eye strain
+  - green (#15803d) accent for primary actions and focus indicators
+*/
 :root {
-  --bg-page: #0f1117;
-  --bg-surface: #161922;
-  --bg-surface-elevated: #1e222f;
-  --bg-input: #0d0f14;
-  --border-subtle: #262a36;
-  --text-main: #f3f4f6;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
+  color-scheme: light;
 
-  /* Status Colors */
-  --status-amber-text: #fbbf24;
-  --status-amber-bg: rgba(120, 53, 15, 0.35);
-  --status-amber-border: rgba(180, 83, 9, 0.5);
+  --bg-page: #fbf9f5;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f5f2eb;
+  --bg-surface-subtle: #faf7f0;
+  --bg-input: #ffffff;
+  --border-subtle: #eae6de;
+  --border-medium: #d6d0c4;
+  --border-strong: #a8a194;
+  --text-main: #1c1917;
+  --text-muted: #57534e;
+  --text-subtle: #8c857b;
+  --accent: #15803d;
+  --accent-hover: #166534;
+  --accent-light: #f0fdf4;
 
-  --status-red-text: #f87171;
-  --status-red-bg: rgba(127, 29, 29, 0.35);
-  --status-red-border: rgba(185, 28, 28, 0.5);
+  /* status badge colors: refined, desaturated, high-readability tokens */
+  --status-amber-text: #92400e;
+  --status-amber-bg: #fef3c7;
+  --status-amber-border: #fde68a;
 
-  --status-green-text: #34d399;
-  --status-green-bg: rgba(6, 78, 59, 0.35);
-  --status-green-border: rgba(5, 150, 105, 0.5);
+  --status-red-text: #991b1b;
+  --status-red-bg: #fee2e2;
+  --status-red-border: #fecaca;
 
-  --status-grey-text: #94a3b8;
-  --status-grey-bg: #1e222f;
-  --status-grey-border: #2e3344;
+  --status-green-text: #166534;
+  --status-green-bg: #dcfce7;
+  --status-green-border: #bbf7d0;
+
+  --status-grey-text: #57534e;
+  --status-grey-bg: #f5f2eb;
+  --status-grey-border: #e2ddd4;
 }
 
-body {
-  background-color: var(--bg-page);
-  color: var(--text-main);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+html, body {
+  background-color: #fbf9f5 !important;
+  background-image: none !important;
+  color: #1c1917 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ensure light mode sticks even if user OS is set to dark */
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #fbf9f5 !important;
+    background-image: none !important;
+    color: #1c1917 !important;
+  }
+}
+
+/* 
+  sleek developer scrollbars:
+  replaces heavy default windows scrollbars with slim, rounded stone tracks
+*/
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d0c4;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a194;
+}
+
+/* clean focus ring utility for keyboard accessibility */
+*:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 1px;
 }

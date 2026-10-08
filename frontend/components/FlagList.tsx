@@ -1,6 +1,8 @@
 import { Flag } from "@/lib/types";
 import { AlertTriangle } from "lucide-react";
 
+// displays the warning flags generated during extraction validation
+// e.g., if a field value wasn't found in the text or currency didn't match
 interface FlagListProps {
   flags: Flag[];
 }
@@ -8,7 +10,7 @@ interface FlagListProps {
 const FLAG_CODE_LABELS: Record<string, string> = {
   ungrounded: "Not found in ticket",
   not_stated: "Not stated",
-  currency_mismatch: "Currency",
+  currency_mismatch: "Currency mismatch",
   multi_issue: "Multiple issues",
   skipped_model: "Skipped (no content)",
   invalid_model_output: "Model output invalid",
@@ -24,29 +26,31 @@ export function FlagList({ flags }: FlagListProps) {
   if (!flags || flags.length === 0) return null;
 
   return (
-    <div className="bg-[#78350f]/20 border border-[#92400e]/50 rounded-md p-3.5 space-y-2.5">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#fbbf24]">
-        <AlertTriangle className="w-3.5 h-3.5 text-[#fbbf24]" />
-        <span>Needs your attention ({flags.length})</span>
+    <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg p-3 space-y-2.5">
+      {/* alert header */}
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#92400e]">
+        <AlertTriangle className="w-3.5 h-3.5 text-[#d97706]" />
+        <span>Validation Discrepancies ({flags.length})</span>
       </div>
 
-      <div className="space-y-2">
+      {/* flags list */}
+      <div className="space-y-1.5">
         {flags.map((flag, idx) => {
           const label = FLAG_CODE_LABELS[flag.code] || flag.code;
           return (
             <div
               key={idx}
-              className="text-xs text-[#fde68a] bg-[#161922]/80 rounded p-2 border border-[#92400e]/40 space-y-1"
+              className="text-xs text-[#78350f] bg-white rounded-md p-2 border border-[#fef08a] space-y-1 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
             >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#fbbf24]">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-[#92400e] text-[11px]">
                   {label}
                 </span>
-                <span className="text-[11px] text-[#94a3b8]">
-                  · {flag.field}
+                <span className="font-mono text-[11px] text-[#8c857b]">
+                  · field: <span className="text-[#57534e] font-semibold">{flag.field}</span>
                 </span>
               </div>
-              <p className="text-xs text-[#fde68a]/90 leading-normal">
+              <p className="text-xs text-[#78350f] leading-relaxed">
                 {flag.message}
               </p>
             </div>

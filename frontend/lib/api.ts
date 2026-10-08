@@ -9,6 +9,8 @@ import {
   TicketListResponse,
 } from "./types";
 
+// custom error subclass so components can inspect error.status (like 404 or 422)
+// and error.errors for specific field validation failures
 export class ApiError extends Error {
   status: number;
   errors?: Record<string, string>;
@@ -21,8 +23,10 @@ export class ApiError extends Error {
   }
 }
 
+// backend base URL: defaults to localhost:8000 for local dev if env variable isn't set
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// generic fetch wrapper so we don't repeat headers and error handling in every API call
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
   const response = await fetch(url, {
@@ -33,6 +37,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
 
+  // if response code is not 2xx, try to extract error details from backend JSON response
   if (!response.ok) {
     let errorDetail: Record<string, unknown> | null = null;
     let message = `API request failed with status ${response.status}`;
@@ -49,7 +54,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
         }
       }
     } catch {
-      // response was not JSON
+      // response body was empty or not valid JSON (e.g. 502 bad gateway HTML)
     }
 
     throw new ApiError(message, response.status, errors);
@@ -58,6 +63,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// fetches list of tickets with optional search query, channel filter, and pagination
 export async function listTickets(params?: {
   q?: string;
   channel?: string;
@@ -73,10 +79,12 @@ export async function listTickets(params?: {
   return request<TicketListResponse>(`/api/tickets${queryString}`);
 }
 
+// fetches single ticket details (used when inspecting full email body)
 export async function getTicket(ticketId: string): Promise<Ticket> {
   return request<Ticket>(`/api/tickets/${ticketId}`);
 }
 
+// starts a batch extraction job for the selected ticket IDs
 export async function createJob(ticketIds: string[]): Promise<CreateJobResponse> {
   return request<CreateJobResponse>("/api/jobs", {
     method: "POST",
@@ -84,10 +92,12 @@ export async function createJob(ticketIds: string[]): Promise<CreateJobResponse>
   });
 }
 
+// gets overall status & progress counts for a job
 export async function getJob(jobId: string, signal?: AbortSignal): Promise<JobResponse> {
   return request<JobResponse>(`/api/jobs/${jobId}`, { signal });
 }
 
+// gets individual extraction results for all tickets processed in this job
 export async function getJobResults(
   jobId: string,
   status?: string,
@@ -97,6 +107,7 @@ export async function getJobResults(
   return request<JobResultsResponse>(`/api/jobs/${jobId}/results${query}`, { signal });
 }
 
+// updates record fields edited by human reviewer and marks it resolved
 export async function patchRecord(
   recordId: string,
   fields: Partial<ExtractedRecord>
@@ -107,12 +118,14 @@ export async function patchRecord(
   });
 }
 
+// sends cancel signal to abort remaining queued items in the job
 export async function cancelJob(jobId: string): Promise<{ status: string }> {
   return request<{ status: string }>(`/api/jobs/${jobId}/cancel`, {
     method: "POST",
   });
 }
 
+// re-runs extraction on a single record with optional provider/model override or diff preview
 export async function rerunRecord(
   recordId: string,
   payload?: {
@@ -128,6 +141,7 @@ export async function rerunRecord(
   });
 }
 
+// helper to construct the direct CSV download link
 export function getExportCsvUrl(jobId: string): string {
   return `${API_BASE}/api/jobs/${jobId}/export.csv`;
 }

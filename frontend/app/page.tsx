@@ -7,7 +7,7 @@ import { listTickets, createJob, ApiError } from "@/lib/api";
 import { TicketFilters } from "@/components/TicketFilters";
 import { TicketTable } from "@/components/TicketTable";
 import { SelectionBar } from "@/components/SelectionBar";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCw, AlertCircle } from "lucide-react";
 
 export default function TicketsPage() {
   const router = useRouter();
@@ -17,17 +17,17 @@ export default function TicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Filters
+  // filter states
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
   const [selectedChannel, setSelectedChannel] = useState<string>("");
   const [hasAttachmentsOnly, setHasAttachmentsOnly] = useState<boolean>(false);
 
-  // Selection
+  // selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Debounce search
+  // debounce search input 250ms so fast keystrokes don't flood the backend
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -35,15 +35,15 @@ export default function TicketsPage() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Fetch tickets
   const fetchTickets = async () => {
     setLoading(true);
     setError(null);
     try {
+      // our seed mock dataset contains 150 tickets, so limit 200 fetches all of them
       const res = await listTickets({
         q: debouncedQuery || undefined,
         channel: selectedChannel || undefined,
-        limit: 200, // Load full dataset (150 tickets)
+        limit: 200,
         offset: 0,
       });
       setTickets(res.items);
@@ -59,11 +59,12 @@ export default function TicketsPage() {
     }
   };
 
+  // re-fetch whenever the debounced search text or channel filter changes
   useEffect(() => {
     fetchTickets();
   }, [debouncedQuery, selectedChannel]);
 
-  // Client-side attachment filtering
+  // attachment filter done in-memory since all 150 tickets are already in memory
   const displayedTickets = useMemo(() => {
     if (!hasAttachmentsOnly) return tickets;
     return tickets.filter((t) => t.attachments > 0);
@@ -112,6 +113,7 @@ export default function TicketsPage() {
     try {
       const ticketIds = Array.from(selectedIds);
       const res = await createJob(ticketIds);
+      // forward user directly to the live review workbench for this job
       router.push(`/jobs/${res.job_id}`);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -124,26 +126,33 @@ export default function TicketsPage() {
   };
 
   return (
-    <div className="flex-1 max-w-7xl w-full mx-auto p-6 pb-24 space-y-4">
-      {/* Page Title & Subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div className="flex-1 max-w-7xl w-full mx-auto p-6 pb-28 space-y-4">
+      {/* workbench page title bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-[#f3f4f6]">
-            Tickets
-          </h1>
-          <p className="text-sm text-[#94a3b8] mt-0.5">
-            Choose tickets to run extraction on.
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold tracking-tight text-[#1c1917]">
+              Customer Support Tickets
+            </h1>
+            <span className="font-mono text-[11px] font-medium text-[#57534e] bg-[#f5f2eb] px-2 py-0.5 rounded-full border border-[#eae6de]">
+              {total} available
+            </span>
+          </div>
+          <p className="text-xs text-[#57534e] mt-0.5">
+            Select incoming tickets to extract structured data into the review queue.
           </p>
         </div>
+
         <button
           onClick={fetchTickets}
-          className="self-start sm:self-auto px-3 py-1.5 rounded-md text-xs font-semibold text-[#f3f4f6] bg-[#161922] border border-[#262a36] hover:bg-[#1e222f] transition-colors cursor-pointer"
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[#1c1917] bg-white border border-[#eae6de] hover:bg-[#f5f2eb] transition-colors cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
         >
-          Refresh
+          <RotateCw className="w-3 h-3 text-[#57534e]" />
+          <span>Refresh</span>
         </button>
       </div>
 
-      {/* Filter and search bar */}
+      {/* filter toolbar */}
       <TicketFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -157,40 +166,41 @@ export default function TicketsPage() {
         totalFiltered={displayedTickets.length}
       />
 
-      {/* Error state */}
       {error && (
-        <div className="p-3 rounded-md bg-[#7f1d1d]/30 border border-[#b91c1c]/50 text-[#f87171] flex items-center justify-between text-sm">
-          <span>{error}</span>
+        <div className="p-3 rounded-lg bg-[#fee2e2] border border-[#fecaca] text-[#991b1b] flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
           <button
             onClick={fetchTickets}
-            className="px-2.5 py-1 rounded bg-[#161922] border border-[#b91c1c]/50 text-xs font-semibold text-[#f87171] hover:bg-[#7f1d1d]/30 transition-colors cursor-pointer"
+            className="px-2.5 py-1 rounded bg-white border border-[#fecaca] text-xs font-semibold text-[#991b1b] hover:bg-[#fee2e2] transition-colors cursor-pointer"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Submit error */}
       {submitError && (
-        <div className="p-3 rounded-md bg-[#7f1d1d]/30 border border-[#b91c1c]/50 text-[#f87171] text-sm">
-          {submitError}
+        <div className="p-3 rounded-lg bg-[#fee2e2] border border-[#fecaca] text-[#991b1b] text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{submitError}</span>
         </div>
       )}
 
-      {/* Loading state */}
       {loading && !error && (
-        <div className="py-20 flex flex-col items-center justify-center text-[#94a3b8] gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-[#3b82f6]" />
-          <p className="text-sm">Loading tickets...</p>
+        <div className="py-24 flex flex-col items-center justify-center text-[#57534e] gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-[#15803d]" />
+          <p className="text-xs font-mono">Loading tickets...</p>
         </div>
       )}
 
-      {/* Empty state */}
+      {/* empty results card */}
       {!loading && !error && displayedTickets.length === 0 && (
-        <div className="py-20 text-center border border-[#262a36] rounded-md bg-[#161922] p-6">
-          <p className="text-sm font-semibold text-[#f3f4f6]">No tickets match</p>
-          <p className="text-xs text-[#94a3b8] mt-1 max-w-sm mx-auto">
-            Try adjusting your search keywords or clearing channel and attachment filters.
+        <div className="py-20 text-center border border-[#eae6de] rounded-lg bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+          <p className="text-sm font-semibold text-[#1c1917]">No tickets found</p>
+          <p className="text-xs text-[#57534e] mt-1 max-w-sm mx-auto">
+            No tickets match your active search terms or channel filters.
           </p>
           <button
             onClick={() => {
@@ -198,14 +208,13 @@ export default function TicketsPage() {
               setSelectedChannel("");
               setHasAttachmentsOnly(false);
             }}
-            className="mt-3 px-3 py-1.5 rounded-md text-xs font-semibold text-[#3b82f6] bg-[#161922] hover:bg-[#1e222f] border border-[#262a36] transition-colors cursor-pointer"
+            className="mt-3 px-3 py-1.5 rounded-md text-xs font-medium text-[#15803d] bg-white hover:bg-[#f5f2eb] border border-[#eae6de] transition-colors cursor-pointer"
           >
-            Reset all filters
+            Clear all filters
           </button>
         </div>
       )}
 
-      {/* Data table */}
       {!loading && !error && displayedTickets.length > 0 && (
         <TicketTable
           tickets={displayedTickets}
@@ -215,7 +224,7 @@ export default function TicketsPage() {
         />
       )}
 
-      {/* Sticky selection bar */}
+      {/* floating bottom dock for triggering batch extraction */}
       <SelectionBar
         selectedCount={selectedIds.size}
         totalTickets={tickets.length}

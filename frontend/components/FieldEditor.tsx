@@ -28,10 +28,12 @@ export function FieldEditor({
   fieldErrors,
   isSaving,
 }: FieldEditorProps) {
-  // Local state for field values to allow immediate typing and retain invalid values
+  // local copy of field values so the user can type freely without triggering a save on each keystroke
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // sync local values from props BUT only for fields that arent currently being edited
+  // this prevents the input from resetting while the user is mid-type
   useEffect(() => {
     setValues((prev) => {
       const incoming: Record<string, unknown> = {
@@ -48,11 +50,11 @@ export function FieldEditor({
         escalated: recordData.escalated ?? false,
       };
 
-      // Only reset a field if it is not currently focused, has no validation error, and has no unsaved local edit
       const next: Record<string, unknown> = { ...incoming };
       for (const f of Object.keys(incoming)) {
         const isFocused = focusedField === f;
         const hasError = Boolean(fieldErrors[f]);
+        // if user typed something that doesnt match what the server returned, keep their version
         const hasLocalEdit = prev[f] !== undefined && prev[f] !== incoming[f];
 
         if (isFocused || hasError || hasLocalEdit) {
@@ -69,15 +71,16 @@ export function FieldEditor({
     setValues((prev) => ({ ...prev, [field]: val }));
   };
 
+  // called on blur (leaving the field) or on Enter - sends the value to the server
   const handleCommit = (field: string) => {
     let rawVal = values[field];
-    // Convert empty strings to null for nullable fields
+    // convert empty string to null for optional fields - backend expects null not ""
     if (rawVal === "" && ["product", "severity", "refund_amount", "deadline"].includes(field)) {
       rawVal = null;
     } else if (field === "refund_amount" && rawVal !== null && rawVal !== "") {
       const num = Number(rawVal);
       if (!isNaN(num)) {
-        rawVal = num;
+        rawVal = num; // convert to number type before sending
       }
     }
     onPatchField(field, rawVal);
@@ -88,6 +91,7 @@ export function FieldEditor({
       e.preventDefault();
       handleCommit(field);
     } else if (e.key === "Escape") {
+      // discard the edit and restore the last saved value
       e.preventDefault();
       const orig = recordData[field as keyof ExtractedRecord];
       setValues((prev) => ({
@@ -98,6 +102,7 @@ export function FieldEditor({
     }
   };
 
+  // renders the small metadata strip below each field - confidence %, source badge, evidence quote
   const renderFieldFooter = (field: string) => {
     const meta = fieldMeta[field];
     const isEdited = editedFields.includes(field);
@@ -106,66 +111,66 @@ export function FieldEditor({
 
     return (
       <div className="mt-1 space-y-1">
-        {/* Error message under field */}
         {errorMsg && (
           <div
             role="alert"
             data-testid={`error-${field}`}
-            className="flex items-center gap-1.5 text-xs text-[#f87171] font-medium bg-[#7f1d1d]/30 px-2 py-1 rounded border border-[#b91c1c]/50"
+            className="flex items-center gap-1.5 text-xs text-[#991b1b] font-medium bg-[#fee2e2] px-2 py-1 rounded border border-[#fecaca]"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* Minimal metadata pills */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#94a3b8]">
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#57534e]">
           {meta && (
             <>
-              {/* Confidence */}
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#1e222f] border border-[#2e3344] text-[#f3f4f6]">
+              {/* confidence score from the model - higher is better */}
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f5f2eb] border border-[#eae6de] text-[#1c1917] font-mono">
                 <span>{Math.round(meta.confidence * 100)}%</span>
-                <span className="text-[#94a3b8]">conf</span>
+                <span className="text-[#8c857b]">conf</span>
               </span>
 
-              {/* Source badge */}
+              {/* source badge - tells reviewer where the value came from */}
               {isEdited || meta.source === "human" ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#1e3a8a]/40 border border-[#1d4ed8]/50 text-[#93c5fd] font-medium">
-                  edited by reviewer
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fef9ee] border border-[#fde68a] text-[#92400e] font-medium">
+                  manual override
                 </span>
               ) : meta.grounded ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#1e222f] border border-[#2e3344] text-[#94a3b8]">
+                // grounded = model found this directly in the ticket text
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#f5f2eb] border border-[#eae6de] text-[#57534e]">
                   model
                 </span>
               ) : meta.note?.includes("domain") ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#78350f]/35 border border-[#92400e]/50 text-[#fbbf24] font-medium">
+                // inferred from domain knowledge, not directly stated in ticket
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fef3c7] border border-[#fde68a] text-[#92400e] font-medium">
                   inferred
                 </span>
               ) : (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#7f1d1d]/35 border border-[#b91c1c]/50 text-[#f87171] font-medium">
+                // ungrounded = model made this up, definitely needs review
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fee2e2] border border-[#fecaca] text-[#991b1b] font-medium">
                   ungrounded
                 </span>
               )}
 
-              {/* Note */}
               {meta.note && (
-                <span className="text-[#94a3b8] italic">({meta.note})</span>
+                <span className="text-[#8c857b] italic text-[10px]">({meta.note})</span>
               )}
             </>
           )}
 
-          {/* Original value hint if touched */}
+          {/* show what the original model value was, in case the reviewer wants to revert */}
           {isEdited && origVal !== undefined && (
-            <span className="text-[#64748b] ml-auto text-[10px]">
+            <span className="text-[#8c857b] ml-auto text-[10px] font-mono">
               orig: {origVal === null ? "null" : String(origVal)}
             </span>
           )}
         </div>
 
-        {/* Evidence quote */}
+        {/* quote from the ticket that the model used as evidence for this value */}
         {meta?.evidence && (
-          <div className="flex items-start gap-1 text-[11px] text-[#94a3b8] italic bg-[#0d0f14] px-2 py-1 rounded border border-[#262a36]">
-            <Quote className="w-3 h-3 text-[#64748b] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-1 text-[11px] text-[#57534e] italic bg-[#fbf9f5] px-2 py-1 rounded border border-[#eae6de]">
+            <Quote className="w-3 h-3 text-[#8c857b] shrink-0 mt-0.5" />
             <span className="line-clamp-2">{meta.evidence}</span>
           </div>
         )}
@@ -173,18 +178,18 @@ export function FieldEditor({
     );
   };
 
+  // shared class for all text inputs and selects
   const inputClass = (hasError: boolean) =>
-    `w-full px-3 py-1.5 rounded-md bg-[#0d0f14] border text-sm text-[#f3f4f6] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors ${
-      hasError ? "border-[#ef4444]" : "border-[#262a36]"
+    `w-full px-2.5 py-1.5 rounded-md bg-[#fbf9f5] focus:bg-white border text-xs text-[#1c1917] focus:outline-none focus:ring-1 focus:ring-[#15803d] focus:border-[#15803d] transition-all ${
+      hasError ? "border-[#dc2626] bg-[#fef2f2]" : "border-[#eae6de]"
     }`;
 
   return (
     <div className="space-y-3.5">
-      {/* Company */}
       <div className="space-y-1">
-        <label htmlFor="field-company" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-company" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Company *</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">required</span>
         </label>
         <input
           type="text"
@@ -204,11 +209,10 @@ export function FieldEditor({
         {renderFieldFooter("company")}
       </div>
 
-      {/* Product */}
       <div className="space-y-1">
-        <label htmlFor="field-product" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-product" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Product</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">optional</span>
         </label>
         <select
           id="field-product"
@@ -223,21 +227,20 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("product", e)}
           className={inputClass(Boolean(fieldErrors.product))}
         >
-          <option value="" className="bg-[#161922] text-[#f3f4f6]">(not stated)</option>
-          <option value="Zen Orchestrator" className="bg-[#161922] text-[#f3f4f6]">Zen Orchestrator</option>
-          <option value="Zen Studio" className="bg-[#161922] text-[#f3f4f6]">Zen Studio</option>
-          <option value="Zen Connect" className="bg-[#161922] text-[#f3f4f6]">Zen Connect</option>
-          <option value="Zen Insights" className="bg-[#161922] text-[#f3f4f6]">Zen Insights</option>
-          <option value="Zen Vault" className="bg-[#161922] text-[#f3f4f6]">Zen Vault</option>
+          <option value="" className="bg-white text-[#1c1917]">(not stated)</option>
+          <option value="Zen Orchestrator" className="bg-white text-[#1c1917]">Zen Orchestrator</option>
+          <option value="Zen Studio" className="bg-white text-[#1c1917]">Zen Studio</option>
+          <option value="Zen Connect" className="bg-white text-[#1c1917]">Zen Connect</option>
+          <option value="Zen Insights" className="bg-white text-[#1c1917]">Zen Insights</option>
+          <option value="Zen Vault" className="bg-white text-[#1c1917]">Zen Vault</option>
         </select>
         {renderFieldFooter("product")}
       </div>
 
-      {/* Category */}
       <div className="space-y-1">
-        <label htmlFor="field-category" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-category" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Category *</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">required</span>
         </label>
         <select
           id="field-category"
@@ -252,22 +255,21 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("category", e)}
           className={inputClass(Boolean(fieldErrors.category))}
         >
-          <option value="" className="bg-[#161922] text-[#f3f4f6]">(select category)</option>
-          <option value="outage" className="bg-[#161922] text-[#f3f4f6]">outage</option>
-          <option value="billing" className="bg-[#161922] text-[#f3f4f6]">billing</option>
-          <option value="bug" className="bg-[#161922] text-[#f3f4f6]">bug</option>
-          <option value="feature_request" className="bg-[#161922] text-[#f3f4f6]">feature_request</option>
-          <option value="how_to" className="bg-[#161922] text-[#f3f4f6]">how_to</option>
-          <option value="churn_risk" className="bg-[#161922] text-[#f3f4f6]">churn_risk</option>
+          <option value="" className="bg-white text-[#1c1917]">(select category)</option>
+          <option value="outage" className="bg-white text-[#1c1917]">outage</option>
+          <option value="billing" className="bg-white text-[#1c1917]">billing</option>
+          <option value="bug" className="bg-white text-[#1c1917]">bug</option>
+          <option value="feature_request" className="bg-white text-[#1c1917]">feature_request</option>
+          <option value="how_to" className="bg-white text-[#1c1917]">how_to</option>
+          <option value="churn_risk" className="bg-white text-[#1c1917]">churn_risk</option>
         </select>
         {renderFieldFooter("category")}
       </div>
 
-      {/* Severity */}
       <div className="space-y-1">
-        <label htmlFor="field-severity" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-severity" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Severity</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">optional</span>
         </label>
         <select
           id="field-severity"
@@ -282,20 +284,19 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("severity", e)}
           className={inputClass(Boolean(fieldErrors.severity))}
         >
-          <option value="" className="bg-[#161922] text-[#f3f4f6]">(not stated)</option>
-          <option value="low" className="bg-[#161922] text-[#f3f4f6]">low</option>
-          <option value="medium" className="bg-[#161922] text-[#f3f4f6]">medium</option>
-          <option value="high" className="bg-[#161922] text-[#f3f4f6]">high</option>
-          <option value="critical" className="bg-[#161922] text-[#f3f4f6]">critical</option>
+          <option value="" className="bg-white text-[#1c1917]">(not stated)</option>
+          <option value="low" className="bg-white text-[#1c1917]">low</option>
+          <option value="medium" className="bg-white text-[#1c1917]">medium</option>
+          <option value="high" className="bg-white text-[#1c1917]">high</option>
+          <option value="critical" className="bg-white text-[#1c1917]">critical</option>
         </select>
         {renderFieldFooter("severity")}
       </div>
 
-      {/* Requested Action */}
       <div className="space-y-1">
-        <label htmlFor="field-requested_action" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-requested_action" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Requested Action *</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">required</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">required</span>
         </label>
         <select
           id="field-requested_action"
@@ -310,22 +311,21 @@ export function FieldEditor({
           onKeyDown={(e) => handleKeyDown("requested_action", e)}
           className={inputClass(Boolean(fieldErrors.requested_action))}
         >
-          <option value="" className="bg-[#161922] text-[#f3f4f6]">(select action)</option>
-          <option value="refund" className="bg-[#161922] text-[#f3f4f6]">refund</option>
-          <option value="credit" className="bg-[#161922] text-[#f3f4f6]">credit</option>
-          <option value="fix" className="bg-[#161922] text-[#f3f4f6]">fix</option>
-          <option value="callback" className="bg-[#161922] text-[#f3f4f6]">callback</option>
-          <option value="information" className="bg-[#161922] text-[#f3f4f6]">information</option>
-          <option value="none" className="bg-[#161922] text-[#f3f4f6]">none</option>
+          <option value="" className="bg-white text-[#1c1917]">(select action)</option>
+          <option value="refund" className="bg-white text-[#1c1917]">refund</option>
+          <option value="credit" className="bg-white text-[#1c1917]">credit</option>
+          <option value="fix" className="bg-white text-[#1c1917]">fix</option>
+          <option value="callback" className="bg-white text-[#1c1917]">callback</option>
+          <option value="information" className="bg-white text-[#1c1917]">information</option>
+          <option value="none" className="bg-white text-[#1c1917]">none</option>
         </select>
         {renderFieldFooter("requested_action")}
       </div>
 
-      {/* Refund Amount (USD) */}
       <div className="space-y-1">
-        <label htmlFor="field-refund_amount" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-refund_amount" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Refund Amount (USD)</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">optional</span>
         </label>
         <input
           type="number"
@@ -346,11 +346,10 @@ export function FieldEditor({
         {renderFieldFooter("refund_amount")}
       </div>
 
-      {/* Deadline */}
       <div className="space-y-1">
-        <label htmlFor="field-deadline" className="text-xs font-semibold text-[#f3f4f6] flex items-center justify-between">
+        <label htmlFor="field-deadline" className="text-xs font-semibold text-[#1c1917] flex items-center justify-between">
           <span>Deadline</span>
-          <span className="text-[11px] text-[#94a3b8] font-normal">optional</span>
+          <span className="text-[10px] text-[#8c857b] font-normal uppercase tracking-wider">optional</span>
         </label>
         <input
           type="date"
@@ -369,17 +368,17 @@ export function FieldEditor({
         {renderFieldFooter("deadline")}
       </div>
 
-      {/* Escalated */}
-      <div className="p-3 rounded-md bg-[#161922] border border-[#262a36] flex items-center justify-between">
+      {/* escalated boolean toggle */}
+      <div className="p-3 rounded-lg bg-[#fbf9f5] border border-[#eae6de] flex items-center justify-between">
         <div>
           <label
             htmlFor="field-escalated"
-            className="text-xs font-semibold text-[#f3f4f6] cursor-pointer select-none"
+            className="text-xs font-semibold text-[#1c1917] cursor-pointer select-none"
           >
-            Escalated
+            Escalated Ticket
           </label>
-          <p className="text-[11px] text-[#94a3b8]">
-            Check if customer indicated executive escalation or churn risk
+          <p className="text-[11px] text-[#57534e]">
+            Customer indicated executive escalation or urgent churn risk
           </p>
         </div>
         <input
@@ -391,7 +390,7 @@ export function FieldEditor({
             handleChange("escalated", e.target.checked);
             onPatchField("escalated", e.target.checked);
           }}
-          className="w-4 h-4 rounded border-[#262a36] bg-[#0d0f14] text-[#3b82f6] focus:ring-[#3b82f6] cursor-pointer"
+          className="w-4 h-4 rounded border-[#d6d0c4] bg-[#fbf9f5] text-[#15803d] focus:ring-[#15803d] cursor-pointer"
         />
       </div>
       {renderFieldFooter("escalated")}

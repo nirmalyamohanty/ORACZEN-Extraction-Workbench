@@ -29,6 +29,7 @@ export function RerunModal({
 
   if (!isOpen) return null;
 
+  // preview_only=true runs the model and returns the diff without persisting
   const handleFetchPreview = async (overwrite: boolean = overwriteEdited) => {
     setLoading(true);
     setPreviewError(null);
@@ -47,6 +48,7 @@ export function RerunModal({
     }
   };
 
+  // preview_only=false commits the replacement to database
   const handleApply = async () => {
     setApplying(true);
     setPreviewError(null);
@@ -67,36 +69,40 @@ export function RerunModal({
   };
 
   const formatVal = (val: unknown) => {
-    if (val === null || val === undefined) return <span className="text-[#64748b] italic">null</span>;
+    if (val === null || val === undefined) return <span className="text-[#8c857b] italic font-sans">null</span>;
     if (typeof val === "boolean") return val ? "true" : "false";
     return String(val);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-      <div className="bg-[#161922] border border-[#262a36] rounded-md max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-[#262a36] flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+      <div className="bg-white border border-[#eae6de] rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        {/* modal title bar */}
+        <div className="px-5 py-3.5 border-b border-[#eae6de] flex items-center justify-between bg-[#fbf9f5]">
           <div>
-            <h3 className="text-sm font-semibold text-[#f3f4f6]">
-              Re-run extraction ({ticketId})
-            </h3>
-            <p className="text-xs text-[#94a3b8]">
-              Compare model extraction output against existing record
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#1c1917] tracking-tight">
+                Re-run Extraction Pipeline
+              </h3>
+              <span className="font-mono text-[11px] text-[#57534e] bg-[#f5f2eb] px-1.5 py-0.2 rounded border border-[#eae6de]">
+                {ticketId}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#57534e] mt-0.5">
+              Inspect model re-extraction diff before overwriting saved values.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-[#94a3b8] hover:text-[#f3f4f6] rounded transition-colors"
+            className="p-1 text-[#57534e] hover:text-[#1c1917] rounded hover:bg-[#f5f2eb] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4 flex-1">
-          {/* Settings Section */}
-          <div className="bg-[#0d0f14] p-3 rounded-md border border-[#262a36]">
+          {/* overwrite manual edits toggle */}
+          <div className="bg-[#fbf9f5] p-3 rounded-md border border-[#eae6de]">
             <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -108,27 +114,27 @@ export function RerunModal({
                     handleFetchPreview(checked);
                   }
                 }}
-                className="mt-0.5 rounded border-[#262a36] bg-[#161922] text-[#3b82f6] focus:ring-[#3b82f6]"
+                className="mt-0.5 rounded border-[#d6d0c4] bg-white text-[#15803d] focus:ring-[#15803d]"
               />
               <div className="text-xs">
-                <span className="font-medium text-[#f3f4f6]">
-                  Overwrite human-edited fields
+                <span className="font-medium text-[#1c1917]">
+                  Overwrite reviewer manual edits
                 </span>
-                <p className="text-[#94a3b8] mt-0.5">
-                  When unchecked, fields you manually edited are preserved.
+                <p className="text-[#57534e] mt-0.5">
+                  When unchecked, fields with human edits are locked and preserved.
                 </p>
               </div>
             </label>
           </div>
 
-          {/* Action to Generate Preview */}
+          {/* step 1: calculate diff button */}
           {!diff && !loading && (
-            <div className="text-center py-6 border border-dashed border-[#262a36] rounded-md">
-              <p className="text-xs text-[#f3f4f6] font-medium">
-                Calculate diff preview
+            <div className="text-center py-6 border border-dashed border-[#d6d0c4] rounded-md bg-[#fbf9f5]">
+              <p className="text-xs text-[#1c1917] font-medium">
+                Calculate Extraction Diff
               </p>
-              <p className="text-[11px] text-[#94a3b8] max-w-sm mx-auto mt-1 mb-4">
-                Run the extraction to inspect changed values before applying.
+              <p className="text-[11px] text-[#57534e] max-w-sm mx-auto mt-1 mb-4">
+                Execute LLM extraction against raw ticket text and compare against current record.
               </p>
               <Button
                 variant="outline"
@@ -142,92 +148,81 @@ export function RerunModal({
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center py-8 gap-2 text-[#94a3b8]">
-              <Loader2 className="w-5 h-5 animate-spin text-[#3b82f6]" />
-              <span className="text-xs">Running extraction preview...</span>
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-[#57534e]">
+              <Loader2 className="w-5 h-5 animate-spin text-[#15803d]" />
+              <span className="text-xs font-mono">Running model extraction...</span>
             </div>
           )}
 
           {previewError && (
-            <div className="p-3 text-xs text-[#f87171] bg-[#7f1d1d]/30 border border-[#b91c1c]/50 rounded-md">
+            <div className="p-3 text-xs text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] rounded-md">
               {previewError}
             </div>
           )}
 
-          {/* Diff Table */}
+          {/* step 2: diff table */}
           {diff && !loading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-[#f3f4f6]">
-                  Diff comparison
-                </h4>
+                <h4 className="text-xs font-semibold text-[#1c1917]">Comparison Matrix</h4>
                 <button
                   type="button"
                   onClick={() => handleFetchPreview()}
-                  className="text-xs text-[#3b82f6] hover:underline flex items-center gap-1"
+                  className="text-xs text-[#15803d] hover:underline flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>Re-calculate</span>
                 </button>
               </div>
 
-              <div className="border border-[#262a36] rounded-md overflow-hidden text-xs">
+              <div className="border border-[#eae6de] rounded-md overflow-hidden text-xs">
                 <table className="w-full text-left">
-                  <thead className="bg-[#12141c] text-[#94a3b8] border-b border-[#262a36] font-medium">
+                  <thead className="bg-[#f5f2eb] text-[#6b655b] border-b border-[#eae6de] text-[11px] font-semibold uppercase tracking-wider">
                     <tr>
                       <th className="py-2 px-3">Field</th>
                       <th className="py-2 px-3">Current</th>
-                      <th className="py-2 px-3">New</th>
-                      <th className="py-2 px-3">Result</th>
+                      <th className="py-2 px-3">New Extracted</th>
+                      <th className="py-2 px-3">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#262a36] font-mono text-xs">
+                  <tbody className="divide-y divide-[#eae6de] font-mono text-xs">
                     {Object.entries(diff).map(([fname, fdiff]) => {
                       const isSame =
-                        JSON.stringify(fdiff.old_value) ===
-                        JSON.stringify(fdiff.new_value);
+                        JSON.stringify(fdiff.old_value) === JSON.stringify(fdiff.new_value);
                       return (
                         <tr
                           key={fname}
                           className={
                             !isSame
                               ? fdiff.will_replace
-                                ? "bg-[#064e3b]/20"
-                                : "bg-[#78350f]/20"
-                              : "bg-[#161922]"
+                                ? "bg-[#f0fdf4]"
+                                : "bg-[#fffdf7]"
+                              : "bg-white"
                           }
                         >
-                          <td className="py-2 px-3 font-sans font-medium text-[#f3f4f6]">
-                            {fname}
-                          </td>
-                          <td className="py-2 px-3 text-[#f3f4f6]">
+                          <td className="py-2 px-3 font-sans font-medium text-[#1c1917]">{fname}</td>
+                          <td className="py-2 px-3 text-[#1c1917]">
                             <div className="flex items-center gap-1.5">
                               <span>{formatVal(fdiff.old_value)}</span>
                               {fdiff.is_edited && (
-                                <span className="text-[10px] px-1 py-0.2 bg-[#1e222f] text-[#94a3b8] rounded font-sans border border-[#2e3344]">
+                                <span className="text-[10px] px-1 bg-[#fef9ee] text-[#92400e] rounded font-sans border border-[#fde68a]">
                                   edited
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-[#f3f4f6]">
-                            <span className={!isSame ? "font-semibold text-[#3b82f6]" : ""}>
+                          <td className="py-2 px-3 text-[#1c1917]">
+                            <span className={!isSame ? "font-semibold text-[#15803d]" : ""}>
                               {formatVal(fdiff.new_value)}
                             </span>
                           </td>
                           <td className="py-2 px-3 font-sans">
                             {fdiff.is_edited && !fdiff.will_replace ? (
-                              <span className="text-[#fbbf24] font-medium">
-                                Keep (edited)
-                              </span>
+                              <span className="text-[#92400e] font-medium text-[11px]">Locked (edited)</span>
                             ) : !isSame ? (
-                              <span className="text-[#34d399] font-medium">
-                                Replace
-                              </span>
+                              <span className="text-[#166534] font-medium text-[11px]">Will Replace</span>
                             ) : (
-                              <span className="text-[#64748b]">
-                                No change
-                              </span>
+                              <span className="text-[#8c857b] text-[11px]">Identical</span>
                             )}
                           </td>
                         </tr>
@@ -240,8 +235,7 @@ export function RerunModal({
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-5 py-3 border-t border-[#262a36] bg-[#12141c] flex items-center justify-end gap-2">
+        <div className="px-5 py-3 border-t border-[#eae6de] bg-[#fbf9f5] flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
@@ -257,7 +251,7 @@ export function RerunModal({
                 Applying...
               </>
             ) : (
-              "Confirm & Replace"
+              "Confirm & Overwrite"
             )}
           </Button>
         </div>

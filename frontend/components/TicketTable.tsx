@@ -1,6 +1,7 @@
 "use client";
 
 import { TicketSummary } from "@/lib/types";
+import { Mail, Globe, MessageSquare, Phone, Paperclip } from "lucide-react";
 
 interface TicketTableProps {
   tickets: TicketSummary[];
@@ -17,6 +18,7 @@ export function TicketTable({
 }: TicketTableProps) {
   const allVisibleSelected =
     tickets.length > 0 && tickets.every((t) => selectedIds.has(t.id));
+
   const someVisibleSelected =
     tickets.some((t) => selectedIds.has(t.id)) && !allVisibleSelected;
 
@@ -33,10 +35,45 @@ export function TicketTable({
     }
   };
 
+  const getChannelBadge = (channel: string) => {
+    switch (channel) {
+      case "email":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#57534e]">
+            <Mail className="w-3 h-3 text-[#8c857b]" />
+            <span>Email</span>
+          </span>
+        );
+      case "web_form":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#57534e]">
+            <Globe className="w-3 h-3 text-[#8c857b]" />
+            <span>Web Form</span>
+          </span>
+        );
+      case "chat":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#57534e]">
+            <MessageSquare className="w-3 h-3 text-[#8c857b]" />
+            <span>Chat</span>
+          </span>
+        );
+      case "phone_transcript":
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#57534e]">
+            <Phone className="w-3 h-3 text-[#8c857b]" />
+            <span>Transcript</span>
+          </span>
+        );
+      default:
+        return <span className="text-xs text-[#57534e]">{channel}</span>;
+    }
+  };
+
   return (
-    <div className="overflow-x-auto rounded-md border border-[#262a36] bg-[#161922]">
-      <table className="w-full text-left text-sm text-[#f3f4f6]">
-        <thead className="bg-[#12141c] text-xs font-semibold text-[#94a3b8] border-b border-[#262a36]">
+    <div className="overflow-x-auto rounded-lg border border-[#eae6de] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <table className="w-full text-left text-sm text-[#1c1917]">
+        <thead className="bg-[#f5f2eb] text-[11px] font-semibold text-[#6b655b] uppercase tracking-wider border-b border-[#eae6de]">
           <tr>
             <th className="p-3 w-10 text-center">
               <input
@@ -47,25 +84,27 @@ export function TicketTable({
                   if (input) input.indeterminate = someVisibleSelected;
                 }}
                 onChange={(e) => onToggleAllVisible(e.target.checked)}
-                className="w-4 h-4 rounded border-[#262a36] bg-[#0d0f14] text-[#3b82f6] focus:ring-[#3b82f6] cursor-pointer"
+                className="w-4 h-4 rounded border-[#d6d0c4] bg-[#fbf9f5] text-[#15803d] focus:ring-[#15803d] cursor-pointer"
               />
             </th>
-            <th className="py-2.5 px-3 w-28 font-semibold">ID</th>
-            <th className="py-2.5 px-3 w-32 font-semibold">Channel</th>
-            <th className="py-2.5 px-3 w-64 font-semibold">Subject & Sender</th>
-            <th className="py-2.5 px-3 font-semibold">Body Preview</th>
-            <th className="py-2.5 px-3 w-28 font-semibold">Received</th>
+            <th className="py-2.5 px-3 w-28 font-medium">Ticket ID</th>
+            <th className="py-2.5 px-3 w-32 font-medium">Channel</th>
+            <th className="py-2.5 px-3 w-72 font-medium">Subject &amp; Sender</th>
+            <th className="py-2.5 px-3 font-medium">Body Preview</th>
+            <th className="py-2.5 px-3 w-28 font-medium">Received</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#262a36]">
+        <tbody className="divide-y divide-[#eae6de]">
           {tickets.map((t) => {
             const isSelected = selectedIds.has(t.id);
             return (
               <tr
                 key={t.id}
                 onClick={() => onToggleSelect(t.id)}
-                className={`transition-colors cursor-pointer hover:bg-[#1e222f] ${
-                  isSelected ? "bg-[#1e293b]" : ""
+                className={`transition-colors cursor-pointer ${
+                  isSelected
+                    ? "bg-[#fcf8f0] border-l-2 border-l-[#15803d]"
+                    : "hover:bg-[#f8f6f0]"
                 }`}
               >
                 <td
@@ -77,35 +116,42 @@ export function TicketTable({
                     aria-label={`Select ticket ${t.id}`}
                     checked={isSelected}
                     onChange={() => onToggleSelect(t.id)}
-                    className="w-4 h-4 rounded border-[#262a36] bg-[#0d0f14] text-[#3b82f6] focus:ring-[#3b82f6] cursor-pointer"
+                    className="w-4 h-4 rounded border-[#d6d0c4] bg-[#fbf9f5] text-[#15803d] focus:ring-[#15803d] cursor-pointer"
                   />
                 </td>
-                <td className="py-2.5 px-3 font-mono text-xs font-semibold text-[#f3f4f6]">
-                  {t.id}
-                </td>
-                <td className="py-2.5 px-3 text-xs text-[#94a3b8]">
-                  {t.channel.replace("_", " ")}
+                <td className="py-2.5 px-3">
+                  <span className="font-mono text-xs font-semibold text-[#1c1917] bg-[#fbf9f5] px-1.5 py-0.5 rounded border border-[#eae6de]">
+                    {t.id}
+                  </span>
                 </td>
                 <td className="py-2.5 px-3">
-                  <div className="font-semibold text-sm text-[#f3f4f6] truncate max-w-xs">
+                  {getChannelBadge(t.channel)}
+                </td>
+                <td className="py-2.5 px-3">
+                  <div className="font-semibold text-xs text-[#1c1917] truncate max-w-xs">
                     {t.subject || (
-                      <span className="text-[#64748b] italic font-normal">(no subject)</span>
+                      <span className="text-[#8c857b] italic font-normal">(no subject)</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#94a3b8] truncate max-w-[200px] mt-0.5">
-                    {t.from_email}
-                    {t.attachments > 0 && ` (${t.attachments} att)`}
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#57534e] truncate max-w-[240px] mt-0.5 font-mono">
+                    <span className="truncate">{t.from_email}</span>
+                    {t.attachments > 0 && (
+                      <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-[#f5f2eb] text-[#57534e] text-[10px] shrink-0 font-sans">
+                        <Paperclip className="w-2.5 h-2.5" />
+                        {t.attachments}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="py-2.5 px-3 max-w-md">
                   <div
-                    className="text-xs text-[#94a3b8] line-clamp-2 leading-relaxed break-words"
+                    className="text-xs text-[#57534e] line-clamp-2 leading-relaxed break-words"
                     title={t.body_preview}
                   >
                     {t.body_preview}
                   </div>
                 </td>
-                <td className="py-2.5 px-3 text-xs text-[#94a3b8] whitespace-nowrap">
+                <td className="py-2.5 px-3 text-[11px] font-mono text-[#57534e] whitespace-nowrap">
                   {formatDate(t.received_at)}
                 </td>
               </tr>

@@ -1,5 +1,6 @@
 import { JobProgress, JobStatus } from "@/lib/types";
 
+// progress overview card showing percentage and status counters
 interface ProgressBarProps {
   progress?: JobProgress;
   status: JobStatus;
@@ -11,15 +12,7 @@ export function ProgressBar({
 }: ProgressBarProps) {
   if (!progress) return null;
 
-  // Format counts: "Queued 100 · Running 4 · Done 40 · Needs review 4 · Failed 2", omitting 0s
-  const countParts: string[] = [];
-  if (progress.queued > 0) countParts.push(`Queued ${progress.queued}`);
-  if (progress.running > 0) countParts.push(`Running ${progress.running}`);
-  if (progress.done > 0) countParts.push(`Done ${progress.done}`);
-  if (progress.needs_review > 0) countParts.push(`Needs review ${progress.needs_review}`);
-  if (progress.failed > 0) countParts.push(`Failed ${progress.failed}`);
-  if (progress.cancelled > 0) countParts.push(`Cancelled ${progress.cancelled}`);
-
+  // status pill label
   const statusLabel =
     status === "running"
       ? "Running"
@@ -30,30 +23,67 @@ export function ProgressBar({
       : "Queued";
 
   return (
-    <div className="bg-[#161922] border border-[#262a36] rounded-md p-4 space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-[#f3f4f6]">
-          {progress.finished} of {progress.total} processed
-        </span>
-        <span className="text-xs font-semibold text-[#94a3b8]">
-          {statusLabel}
-        </span>
+    <div className="bg-white border border-[#eae6de] rounded-lg p-3.5 space-y-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-[#1c1917]">
+            Batch Progress
+          </span>
+          <span className="font-mono text-[11px] text-[#57534e]">
+            ({progress.finished} of {progress.total} processed)
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono font-semibold text-xs text-[#1c1917]">
+            {Math.round(progress.percent)}%
+          </span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#f5f2eb] text-[#57534e] border border-[#eae6de] uppercase tracking-wider">
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
-      {/* Flat 8px bar: dark grey track, solid blue fill */}
-      <div className="w-full h-2 bg-[#262a36] rounded-md overflow-hidden">
+      {/* slim 6px progress track */}
+      <div className="w-full h-1.5 bg-[#eae6de] rounded-full overflow-hidden">
         <div
-          className="h-full bg-[#3b82f6] rounded-md transition-all duration-300"
+          className="h-full bg-[#15803d] rounded-full transition-all duration-300"
           style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
         />
       </div>
 
-      {/* Counts line in exact form: Queued 100 · Running 4 · Done 40 · Needs review 4 · Failed 2 */}
-      {countParts.length > 0 && (
-        <div className="text-xs text-[#94a3b8]">
-          {countParts.join(" · ")}
-        </div>
-      )}
+      {/* breakdown chips row */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
+        {progress.done > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#dcfce7] text-[#166534] border border-[#bbf7d0] font-mono">
+            <span>Done:</span>
+            <span className="font-semibold">{progress.done}</span>
+          </span>
+        )}
+        {progress.needs_review > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fef3c7] text-[#92400e] border border-[#fde68a] font-mono">
+            <span>Review:</span>
+            <span className="font-semibold">{progress.needs_review}</span>
+          </span>
+        )}
+        {progress.running > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#dbeafe] text-[#1e40af] border border-[#bfdbfe] font-mono">
+            <span>Running:</span>
+            <span className="font-semibold">{progress.running}</span>
+          </span>
+        )}
+        {progress.failed > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] font-mono">
+            <span>Failed:</span>
+            <span className="font-semibold">{progress.failed}</span>
+          </span>
+        )}
+        {progress.queued > 0 && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f5f2eb] text-[#57534e] border border-[#eae6de] font-mono">
+            <span>Queued:</span>
+            <span className="font-semibold">{progress.queued}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 }
