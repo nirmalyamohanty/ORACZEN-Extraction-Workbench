@@ -44,7 +44,7 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
       if (isInitial) {
-        setError(err instanceof Error ? err.message : "Failed to load job");
+        setError("Could not load job");
       }
       // On subsequent poll failures keep last good data visible
     } finally {
@@ -62,14 +62,21 @@ export function useJobPolling(jobId: string): UseJobPollingReturn {
 
     // Poll every 1 s while the job is active; stop once it reaches a terminal state
     const pollLoop = async () => {
-      const active =
-        statusRef.current === "queued" ||
-        statusRef.current === "running" ||
-        statusRef.current === null;
-      if (active) await fetchOnce(false);
-      const stillActive =
-        statusRef.current === "queued" || statusRef.current === "running";
-      if (isMounted && stillActive) {
+      const isTerminal =
+        statusRef.current === "done" ||
+        statusRef.current === "cancelled" ||
+        statusRef.current === "failed";
+
+      if (!isTerminal) {
+        await fetchOnce(false);
+      }
+
+      const stillNotTerminal =
+        statusRef.current !== "done" &&
+        statusRef.current !== "cancelled" &&
+        statusRef.current !== "failed";
+
+      if (isMounted && stillNotTerminal) {
         timer = setTimeout(pollLoop, 1000);
       }
     };

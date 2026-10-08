@@ -48,6 +48,11 @@ export default function JobReviewPage() {
     return sortItemsForReview(results?.items || []);
   }, [results?.items]);
 
+  // Clear field errors on every selection change (click, j/k, etc.)
+  useEffect(() => {
+    setFieldErrors({});
+  }, [selectedTicketId]);
+
   // Set default selected ticket as first available or first needs_review
   useEffect(() => {
     if (!results || results.items.length === 0) return;
@@ -209,8 +214,8 @@ export default function JobReviewPage() {
         <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-white">Job Not Found</h2>
-        <p className="text-sm text-slate-400">{error}</p>
+        <h2 className="text-xl font-bold text-white">Could not load job</h2>
+        <p className="text-sm text-slate-400">Could not load job</p>
         <div className="pt-2">
           <Link
             href="/"

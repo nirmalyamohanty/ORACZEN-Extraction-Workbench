@@ -240,4 +240,49 @@ describe("FieldEditor component", () => {
     // Assert user's in-progress typed value is preserved
     expect(input.value).toBe("User Is Typing...");
   });
+
+  it("clears field errors on record selection change", () => {
+    const onPatchMock = vi.fn().mockResolvedValue(true);
+
+    const { rerender } = render(
+      <FieldEditor
+        recordId="rec_1"
+        recordData={{
+          company: "Company 1",
+          severity: "urgent" as any,
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{
+          severity: "Input should be 'low', 'medium', 'high' or 'critical'",
+        }}
+        isSaving={false}
+      />
+    );
+
+    // Initial record has error
+    expect(screen.queryByTestId("error-severity")).not.toBeNull();
+
+    // Switch selection to new record with empty fieldErrors
+    rerender(
+      <FieldEditor
+        recordId="rec_2"
+        recordData={{
+          company: "Company 2",
+          severity: "medium",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{}}
+        isSaving={false}
+      />
+    );
+
+    // Error is cleared on selection change
+    expect(screen.queryByTestId("error-severity")).toBeNull();
+  });
 });
