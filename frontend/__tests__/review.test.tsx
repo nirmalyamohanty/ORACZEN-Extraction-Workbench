@@ -194,4 +194,50 @@ describe("FieldEditor component", () => {
     const errorEl = screen.getByTestId("error-severity");
     expect(errorEl.textContent).toContain("Input should be 'low', 'medium', 'high' or 'critical'");
   });
+
+  it("does not overwrite field values from props when field is focused or has unsaved edit", () => {
+    const onPatchMock = vi.fn().mockResolvedValue(true);
+
+    const { rerender } = render(
+      <FieldEditor
+        recordId="rec_edit_sync_test"
+        recordData={{
+          company: "Initial Company",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{}}
+        isSaving={false}
+      />
+    );
+
+    const input = screen.getByTestId("input-company") as HTMLInputElement;
+    expect(input.value).toBe("Initial Company");
+
+    // Focus input and type an unsaved edit
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "User Is Typing..." } });
+    expect(input.value).toBe("User Is Typing...");
+
+    // Background poll triggers re-render with different/old prop data
+    rerender(
+      <FieldEditor
+        recordId="rec_edit_sync_test"
+        recordData={{
+          company: "Background Updated Company",
+        }}
+        fieldMeta={{}}
+        editedFields={[]}
+        originalValues={{}}
+        onPatchField={onPatchMock}
+        fieldErrors={{}}
+        isSaving={false}
+      />
+    );
+
+    // Assert user's in-progress typed value is preserved
+    expect(input.value).toBe("User Is Typing...");
+  });
 });

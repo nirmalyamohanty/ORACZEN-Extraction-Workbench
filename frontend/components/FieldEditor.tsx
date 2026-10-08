@@ -34,10 +34,11 @@ export function FieldEditor({
 }: FieldEditorProps) {
   // Local state for field values to allow immediate typing and retain invalid values
   const [values, setValues] = useState<Record<string, unknown>>({});
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
     setValues((prev) => {
-      const next: Record<string, unknown> = {
+      const incoming: Record<string, unknown> = {
         company: recordData.company ?? "",
         product: recordData.product ?? "",
         category: recordData.category ?? "",
@@ -50,15 +51,23 @@ export function FieldEditor({
         deadline: recordData.deadline ?? "",
         escalated: recordData.escalated ?? false,
       };
-      // If a field has an active validation error, keep the user's typed value open
-      for (const f of Object.keys(fieldErrors)) {
-        if (fieldErrors[f] && f in prev && prev[f] !== undefined) {
-          next[f] = prev[f];
+
+      // Only reset a field if it is not currently focused, has no validation error, and has no unsaved local edit
+      const next: Record<string, unknown> = { ...incoming };
+      for (const f of Object.keys(incoming)) {
+        const isFocused = focusedField === f;
+        const hasError = Boolean(fieldErrors[f]);
+        const hasLocalEdit = prev[f] !== undefined && prev[f] !== incoming[f];
+
+        if (isFocused || hasError || hasLocalEdit) {
+          if (f in prev && prev[f] !== undefined) {
+            next[f] = prev[f];
+          }
         }
       }
       return next;
     });
-  }, [recordId, recordData, fieldErrors]);
+  }, [recordId, recordData, fieldErrors, focusedField]);
 
   const handleChange = (field: string, val: unknown) => {
     setValues((prev) => ({ ...prev, [field]: val }));
@@ -183,8 +192,12 @@ export function FieldEditor({
           id="field-company"
           data-testid="input-company"
           value={(values.company as string) || ""}
+          onFocus={() => setFocusedField("company")}
           onChange={(e) => handleChange("company", e.target.value)}
-          onBlur={() => handleCommit("company")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("company");
+          }}
           onKeyDown={(e) => handleKeyDown("company", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.company ? "border-rose-500" : "border-slate-700"
@@ -204,8 +217,12 @@ export function FieldEditor({
           id="field-product"
           data-testid="select-product"
           value={(values.product as string) || ""}
+          onFocus={() => setFocusedField("product")}
           onChange={(e) => handleChange("product", e.target.value)}
-          onBlur={() => handleCommit("product")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("product");
+          }}
           onKeyDown={(e) => handleKeyDown("product", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.product ? "border-rose-500" : "border-slate-700"
@@ -231,8 +248,12 @@ export function FieldEditor({
           id="field-category"
           data-testid="select-category"
           value={(values.category as string) || ""}
+          onFocus={() => setFocusedField("category")}
           onChange={(e) => handleChange("category", e.target.value)}
-          onBlur={() => handleCommit("category")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("category");
+          }}
           onKeyDown={(e) => handleKeyDown("category", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.category ? "border-rose-500" : "border-slate-700"
@@ -259,8 +280,12 @@ export function FieldEditor({
           id="field-severity"
           data-testid="select-severity"
           value={(values.severity as string) || ""}
+          onFocus={() => setFocusedField("severity")}
           onChange={(e) => handleChange("severity", e.target.value)}
-          onBlur={() => handleCommit("severity")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("severity");
+          }}
           onKeyDown={(e) => handleKeyDown("severity", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.severity ? "border-rose-500" : "border-slate-700"
@@ -285,8 +310,12 @@ export function FieldEditor({
           id="field-requested_action"
           data-testid="select-requested_action"
           value={(values.requested_action as string) || ""}
+          onFocus={() => setFocusedField("requested_action")}
           onChange={(e) => handleChange("requested_action", e.target.value)}
-          onBlur={() => handleCommit("requested_action")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("requested_action");
+          }}
           onKeyDown={(e) => handleKeyDown("requested_action", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.requested_action ? "border-rose-500" : "border-slate-700"
@@ -315,8 +344,12 @@ export function FieldEditor({
           data-testid="input-refund_amount"
           step="any"
           value={values.refund_amount !== undefined ? (values.refund_amount as string | number) : ""}
+          onFocus={() => setFocusedField("refund_amount")}
           onChange={(e) => handleChange("refund_amount", e.target.value)}
-          onBlur={() => handleCommit("refund_amount")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("refund_amount");
+          }}
           onKeyDown={(e) => handleKeyDown("refund_amount", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.refund_amount ? "border-rose-500" : "border-slate-700"
@@ -337,8 +370,12 @@ export function FieldEditor({
           id="field-deadline"
           data-testid="input-deadline"
           value={(values.deadline as string) || ""}
+          onFocus={() => setFocusedField("deadline")}
           onChange={(e) => handleChange("deadline", e.target.value)}
-          onBlur={() => handleCommit("deadline")}
+          onBlur={() => {
+            setFocusedField(null);
+            handleCommit("deadline");
+          }}
           onKeyDown={(e) => handleKeyDown("deadline", e)}
           className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
             fieldErrors.deadline ? "border-rose-500" : "border-slate-700"
