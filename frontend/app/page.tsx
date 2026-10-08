@@ -15,6 +15,7 @@ export default function TicketsPage() {
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -107,39 +108,38 @@ export default function TicketsPage() {
   const handleStartExtraction = async () => {
     if (selectedIds.size === 0) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const ticketIds = Array.from(selectedIds);
       const res = await createJob(ticketIds);
       router.push(`/jobs/${res.job_id}`);
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(`Failed to start job: ${err.message}`);
+        setSubmitError(`Failed to start job: ${err.message}`);
       } else {
-        alert("Unexpected error starting extraction job.");
+        setSubmitError("Unexpected error starting extraction job.");
       }
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex-1 max-w-7xl w-full mx-auto p-6 pb-28 space-y-6">
+    <div className="flex-1 max-w-7xl w-full mx-auto p-6 pb-24 space-y-4">
       {/* Page Title & Subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Support Tickets
+          <h1 className="text-xl font-semibold tracking-tight text-[#1c1c1a]">
+            Tickets
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Select incoming customer support tickets to run LLM extraction and
-            human review.
+          <p className="text-sm text-[#6b6b66] mt-0.5">
+            Choose tickets to run extraction on.
           </p>
         </div>
         <button
           onClick={fetchTickets}
-          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors"
+          className="self-start sm:self-auto px-3 py-1.5 rounded-md text-xs font-semibold text-[#1c1c1a] bg-white border border-[#e2e2dd] hover:bg-[#f7f7f5] transition-colors cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh</span>
+          Refresh
         </button>
       </div>
 
@@ -159,33 +159,37 @@ export default function TicketsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-950/40 border border-red-800 text-red-200 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-            <span>{error}</span>
-          </div>
+        <div className="p-3 rounded-md bg-[#fee2e2] border border-[#fecaca] text-[#b91c1c] flex items-center justify-between text-sm">
+          <span>{error}</span>
           <button
             onClick={fetchTickets}
-            className="px-3 py-1 rounded bg-red-800/50 hover:bg-red-800 text-xs font-medium text-white transition-colors"
+            className="px-2.5 py-1 rounded bg-white border border-[#fecaca] text-xs font-semibold text-[#b91c1c] hover:bg-[#fee2e2] transition-colors cursor-pointer"
           >
             Retry
           </button>
         </div>
       )}
 
+      {/* Submit error */}
+      {submitError && (
+        <div className="p-3 rounded-md bg-[#fee2e2] border border-[#fecaca] text-[#b91c1c] text-sm">
+          {submitError}
+        </div>
+      )}
+
       {/* Loading state */}
       {loading && !error && (
-        <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-          <p className="text-sm">Loading tickets from backend...</p>
+        <div className="py-20 flex flex-col items-center justify-center text-[#6b6b66] gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-[#1f4fd8]" />
+          <p className="text-sm">Loading tickets...</p>
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && displayedTickets.length === 0 && (
-        <div className="py-24 text-center border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
-          <p className="text-base font-medium text-slate-300">No tickets match</p>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <div className="py-20 text-center border border-[#e2e2dd] rounded-md bg-white p-6">
+          <p className="text-sm font-semibold text-[#1c1c1a]">No tickets match</p>
+          <p className="text-xs text-[#6b6b66] mt-1 max-w-sm mx-auto">
             Try adjusting your search keywords or clearing channel and attachment filters.
           </p>
           <button
@@ -194,7 +198,7 @@ export default function TicketsPage() {
               setSelectedChannel("");
               setHasAttachmentsOnly(false);
             }}
-            className="mt-4 px-3.5 py-1.5 rounded-lg text-xs font-medium text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors"
+            className="mt-3 px-3 py-1.5 rounded-md text-xs font-semibold text-[#1f4fd8] bg-white hover:bg-[#f7f7f5] border border-[#e2e2dd] transition-colors cursor-pointer"
           >
             Reset all filters
           </button>

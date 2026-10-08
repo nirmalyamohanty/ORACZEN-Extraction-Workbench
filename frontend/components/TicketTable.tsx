@@ -21,21 +21,6 @@ export function TicketTable({
   const someVisibleSelected =
     tickets.some((t) => selectedIds.has(t.id)) && !allVisibleSelected;
 
-  const renderChannelIcon = (channel: string) => {
-    switch (channel) {
-      case "email":
-        return <Mail className="w-3.5 h-3.5 text-blue-400" />;
-      case "web_form":
-        return <Globe className="w-3.5 h-3.5 text-emerald-400" />;
-      case "chat":
-        return <MessageSquare className="w-3.5 h-3.5 text-amber-400" />;
-      case "phone_transcript":
-        return <Phone className="w-3.5 h-3.5 text-purple-400" />;
-      default:
-        return null;
-    }
-  };
-
   const formatDate = (isoString: string) => {
     try {
       const d = new Date(isoString);
@@ -50,11 +35,11 @@ export function TicketTable({
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50 shadow-sm">
-      <table className="w-full text-left text-sm text-slate-300">
-        <thead className="bg-slate-900/90 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+    <div className="overflow-x-auto rounded-md border border-[#e2e2dd] bg-white">
+      <table className="w-full text-left text-sm text-[#1c1c1a]">
+        <thead className="bg-[#f7f7f5] text-xs font-semibold text-[#6b6b66] border-b border-[#e2e2dd]">
           <tr>
-            <th className="p-4 w-12 text-center">
+            <th className="p-3 w-10 text-center">
               <input
                 type="checkbox"
                 aria-label="Select all visible tickets"
@@ -63,29 +48,29 @@ export function TicketTable({
                   if (input) input.indeterminate = someVisibleSelected;
                 }}
                 onChange={(e) => onToggleAllVisible(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950 cursor-pointer"
+                className="w-4 h-4 rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8] cursor-pointer"
               />
             </th>
-            <th className="py-3 px-4 w-28">ID</th>
-            <th className="py-3 px-4 w-32">Channel</th>
-            <th className="py-3 px-4 w-64">Subject & Sender</th>
-            <th className="py-3 px-4">Body Preview</th>
-            <th className="py-3 px-4 w-28">Received</th>
+            <th className="py-2.5 px-3 w-28 font-semibold">ID</th>
+            <th className="py-2.5 px-3 w-32 font-semibold">Channel</th>
+            <th className="py-2.5 px-3 w-64 font-semibold">Subject & Sender</th>
+            <th className="py-2.5 px-3 font-semibold">Body Preview</th>
+            <th className="py-2.5 px-3 w-28 font-semibold">Received</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/60">
+        <tbody className="divide-y divide-[#e2e2dd]">
           {tickets.map((t) => {
             const isSelected = selectedIds.has(t.id);
             return (
               <tr
                 key={t.id}
                 onClick={() => onToggleSelect(t.id)}
-                className={`transition-colors cursor-pointer hover:bg-slate-800/40 ${
-                  isSelected ? "bg-indigo-950/20" : ""
+                className={`transition-colors cursor-pointer hover:bg-[#f7f7f5] ${
+                  isSelected ? "bg-[#f0f4ff]" : ""
                 }`}
               >
                 <td
-                  className="p-4 text-center"
+                  className="p-3 text-center"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <input
@@ -93,38 +78,30 @@ export function TicketTable({
                     aria-label={`Select ticket ${t.id}`}
                     checked={isSelected}
                     onChange={() => onToggleSelect(t.id)}
-                    className="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-950 cursor-pointer"
+                    className="w-4 h-4 rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8] cursor-pointer"
                   />
                 </td>
-                <td className="py-3 px-4 font-mono text-xs font-semibold text-indigo-400">
+                <td className="py-2.5 px-3 font-mono text-xs font-semibold text-[#1c1c1a]">
                   {t.id}
                 </td>
-                <td className="py-3 px-4">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                    {renderChannelIcon(t.channel)}
-                    <span>{t.channel.replace("_", " ")}</span>
-                  </span>
+                <td className="py-2.5 px-3 text-xs text-[#6b6b66]">
+                  {t.channel.replace("_", " ")}
                 </td>
-                <td className="py-3 px-4">
-                  <div className="font-medium text-slate-100 truncate max-w-xs">
+                <td className="py-2.5 px-3">
+                  <div className="font-semibold text-sm text-[#1c1c1a] truncate max-w-xs">
                     {t.subject || (
-                      <span className="text-slate-500 italic">(no subject)</span>
+                      <span className="text-[#6b6b66] italic font-normal">(no subject)</span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                    <span className="truncate max-w-[180px]">{t.from_email}</span>
-                    {t.attachments > 0 && (
-                      <span className="inline-flex items-center gap-0.5 text-slate-400">
-                        <Paperclip className="w-3 h-3" />
-                        {t.attachments}
-                      </span>
-                    )}
+                  <div className="text-xs text-[#6b6b66] truncate max-w-[200px] mt-0.5">
+                    {t.from_email}
+                    {t.attachments > 0 && ` (${t.attachments} att)`}
                   </div>
                 </td>
-                <td className="py-3 px-4 text-xs text-slate-400 line-clamp-2 max-w-md">
+                <td className="py-2.5 px-3 text-sm text-[#6b6b66] line-clamp-2 max-w-md">
                   {t.body_preview}
                 </td>
-                <td className="py-3 px-4 text-xs text-slate-400 whitespace-nowrap">
+                <td className="py-2.5 px-3 text-xs text-[#6b6b66] whitespace-nowrap">
                   {formatDate(t.received_at)}
                 </td>
               </tr>
