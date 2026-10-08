@@ -141,3 +141,10 @@ def test_tkt_0101_billing_no_deadline_quote_derived_value():
     assert data["deadline"] is None
     codes = {f["code"] for f in data["flags"]}
     assert "derived_value" in codes
+
+
+def test_unmatched_category_defaults_to_how_to_and_flags():
+    from app.providers.mock import _pick_category
+    cat, flags = _pick_category("Hello, sending a quick note regarding the sync yesterday.")
+    assert cat == "how_to"
+    assert any(f["code"] == "default_category" for f in flags)

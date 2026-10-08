@@ -184,7 +184,13 @@ def _detect_categories(text: str) -> set[str]:
 def _pick_category(text: str) -> tuple[str, list[dict[str, str]]]:
     found = _detect_categories(text)
     if not found:
-        return "how_to", []
+        return "how_to", [
+            _flag(
+                "default_category",
+                "category",
+                "No category cue detected in customer text; defaulted to how_to.",
+            )
+        ]
     ordered = [c for c in CATEGORY_PRIORITY if c in found]
     winner = ordered[0]
     flags: list[dict[str, str]] = []
