@@ -456,20 +456,16 @@ def _extract_deadline(
     return None, _meta(0.0, False), flags
 
 
+_ESCALATED_RE = re.compile(
+    r"\b(termination|non-renew|non renew|cto|cfo|leadership|escalating|do not renew)\b",
+    re.IGNORECASE,
+)
+
+
 def _extract_escalated(text: str) -> tuple[bool, dict[str, Any]]:
-    lower = text.lower()
-    triggers = (
-        "termination",
-        "non-renew",
-        "non renew",
-        "cto",
-        "cfo",
-        "leadership",
-        "escalating",
-        "do not renew",
-    )
-    hit = next((t for t in triggers if t in lower), None)
-    if hit:
+    m = _ESCALATED_RE.search(text)
+    if m:
+        hit = m.group(1)
         return True, _meta(0.9, True, evidence=hit)
     return False, _meta(0.8, True)
 
@@ -582,8 +578,4 @@ class MockProvider:
 
         prepared = prepare(ticket)
         payload = build_mock_payload(prepared, ticket)
-
-        if fail_twice and attempt > 2:
-            pass
-
         return json.dumps(payload, sort_keys=True)

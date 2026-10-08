@@ -125,3 +125,11 @@ def test_tkt_0008_vireo_health_grounded():
     data = _payload("tkt_0008")
     assert data["company"] == "Vireo Health"
     assert data["field_meta"]["company"]["grounded"] is True
+
+
+def test_tkt_0008_not_escalated_and_tkt_0002_is():
+    data_0008 = _payload("tkt_0008")
+    assert data_0008["escalated"] is False
+
+    data_0002 = _payload("tkt_0002")
+    assert data_0002["escalated"] is True
