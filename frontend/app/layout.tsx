@@ -13,29 +13,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full bg-slate-950 text-slate-100">
-      <body className="min-h-full flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
-        <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                <span className="font-bold text-white text-base">O</span>
-              </div>
-              <div>
-                <span className="font-semibold text-white tracking-tight text-base group-hover:text-indigo-400 transition-colors">
-                  Oraczen
-                </span>
-                <span className="ml-2 text-xs font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                  Extraction Workbench
-                </span>
-              </div>
+    <html lang="en" className="h-full bg-[#f7f7f5] text-[#1c1c1a]">
+      <body className="min-h-full flex flex-col font-sans antialiased">
+        <header className="sticky top-0 z-40 border-b border-[#e2e2dd] bg-white px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="font-semibold text-[#1c1c1a] text-sm">
+                Oraczen
+              </span>
+              <span className="text-sm text-[#6b6b66]">
+                Extraction Workbench
+              </span>
             </Link>
           </div>
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              FastAPI backend connected
-            </span>
+          <div className="flex items-center gap-2 text-xs text-[#6b6b66]">
+            <span className="w-2 h-2 rounded-full bg-[#166534]"></span>
+            <span>API connected</span>
           </div>
         </header>
         <main className="flex-1 flex flex-col">{children}</main>
