@@ -55,15 +55,15 @@ _CREDIT_OF_RE = re.compile(
     re.IGNORECASE,
 )
 _QUOTE_INVOICE_RE = re.compile(
-    r"came through at\s*(\$[\d,]+).*?quote was\s*(\$[\d,]+)",
+    r"(?:came through at|charged|billed)\s*(\$[\d,]+(?:\.\d+)?).*?(?:quote|order form).*?(?:says|was|signed was)?\s*(\$[\d,]+(?:\.\d+)?)",
     re.IGNORECASE | re.DOTALL,
 )
 _CHARGED_QUOTE_RE = re.compile(
-    r"charged\s*(\$[\d,]+).*?(?:order form|quote)\s*(?:says|was)\s*(\$[\d,]+)",
+    r"(?:quote|order form).*?(?:says|was|signed was)?\s*(\$[\d,]+(?:\.\d+)?).*?(?:came through at|charged|billed)\s*(\$[\d,]+(?:\.\d+)?)",
     re.IGNORECASE | re.DOTALL,
 )
 _DAY_OF_MONTH_RE = re.compile(
-    r"\b(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\b",
+    r"(?<![\$\d,])\b(?:the\s+(\d{1,2})(?:st|nd|rd|th)?|(\d{1,2})(?:st|nd|rd|th))\b(?![\d,])",
     re.IGNORECASE,
 )
 _WEEKDAY_RE = re.compile(
@@ -144,6 +144,9 @@ def _detect_categories(text: str) -> set[str]:
         "double prélèvement",
         "facture",
         "prélèvement",
+        "quote",
+        "renewal came through",
+        "the difference",
     )
     if any(k in lower for k in billing_kw):
         found.add("billing")
@@ -439,7 +442,10 @@ def _extract_deadline(
     for m in _DAY_OF_MONTH_RE.finditer(text):
         if _is_event_date_context(text, m):
             continue
-        day = int(m.group(1))
+        day_str = m.group(1) or m.group(2)
+        if not day_str:
+            continue
+        day = int(day_str)
         if day < 1 or day > 31:
             continue
         phrase = m.group(0)

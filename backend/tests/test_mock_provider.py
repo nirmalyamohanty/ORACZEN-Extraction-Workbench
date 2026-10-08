@@ -133,3 +133,11 @@ def test_tkt_0008_not_escalated_and_tkt_0002_is():
 
     data_0002 = _payload("tkt_0002")
     assert data_0002["escalated"] is True
+
+
+def test_tkt_0101_billing_no_deadline_quote_derived_value():
+    data = _payload("tkt_0101")
+    assert data["category"] == "billing"
+    assert data["deadline"] is None
+    codes = {f["code"] for f in data["flags"]}
+    assert "derived_value" in codes
