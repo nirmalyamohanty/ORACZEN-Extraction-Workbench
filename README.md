@@ -352,8 +352,8 @@ Configuration is loaded from environment variables via Pydantic Settings (`backe
 ## 13. Local Setup
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+ (tested on Node 20+)
+- Python 3.11+ (tested on Python 3.14)
+- Node.js 18+ (tested on Node 26)
 - npm 9+
 
 ### Backend Setup
