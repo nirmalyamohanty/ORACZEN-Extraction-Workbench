@@ -2,6 +2,12 @@
 
 Human-in-the-loop triage and structured extraction workbench for incoming customer support tickets.
 
+> 🚀 **Live Production Deployment**:
+> - **Frontend (Next.js / Vercel)**: [https://oraczen-extraction-workbench-six.vercel.app](https://oraczen-extraction-workbench-six.vercel.app)
+> - **Backend API (FastAPI / Render)**: [https://oraczen-extraction-workbench.onrender.com](https://oraczen-extraction-workbench.onrender.com)
+> - **Interactive Swagger Docs**: [https://oraczen-extraction-workbench.onrender.com/docs](https://oraczen-extraction-workbench.onrender.com/docs)
+> - **Health Check**: [https://oraczen-extraction-workbench.onrender.com/health](https://oraczen-extraction-workbench.onrender.com/health)
+
 ---
 
 ## 1. Overview
@@ -461,14 +467,18 @@ npx tsc --noEmit
 
 ## 16. Deployment Notes
 
-### Production Recommendations
-- **Frontend (Next.js)**: Deployable to Vercel or Node.js containers with `NEXT_PUBLIC_API_URL` pointing to the production API.
-- **Backend (FastAPI)**: Deployable to Render, Railway, or Fly.io using:
-  ```bash
-  uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
-  ```
-  > **Crucial**: The backend **must run with 1 worker process** (`--workers 1`). Because the job store resides in memory per assignment requirements, running multiple worker processes would fragment job state across processes.
-- **Cold Starts**: On free-tier cloud platforms, initial requests may take 30–60 seconds while containers wake.
+### Live Deployment
+- **Frontend**: Hosted on Vercel at [https://oraczen-extraction-workbench-six.vercel.app](https://oraczen-extraction-workbench-six.vercel.app)
+  - Config: `frontend/vercel.json` with `NEXT_PUBLIC_API_URL` pointing to the Render backend.
+- **Backend**: Hosted on Render at [https://oraczen-extraction-workbench.onrender.com](https://oraczen-extraction-workbench.onrender.com)
+  - Config: `backend/render.yaml` running `uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1`
+  - Health check: `/health`
+  - CORS origins configured via `FRONTEND_ORIGINS`.
+
+### Production Architecture
+- **Single-Worker Constraint**: The backend **must run with 1 worker process** (`--workers 1`). Because the job store resides in memory per assignment requirements, running multiple worker processes would fragment job state across processes.
+- **Mock Default**: In production, `PROVIDER=mock` runs deterministically with zero API key configuration needed.
+- **Cold Starts**: On free-tier cloud platforms (Render), initial requests after idling may take 30–50 seconds while the container wakes.
 
 ---
 
