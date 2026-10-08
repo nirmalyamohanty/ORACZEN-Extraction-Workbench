@@ -70,7 +70,8 @@ class PreparedTicket:
 def prepare(ticket: Ticket) -> PreparedTicket:
     """Pure preprocessing: customer-facing text plus company hints."""
     quoted_removed, without_quotes = _strip_quoted_reply_lines(ticket.body)
-    customer_text = _strip_confidential_footer(without_quotes).strip()
+    customer_text = _strip_confidential_footer(without_quotes)
+    customer_text = _strip_device_footers(customer_text).strip()
     signature_company = _parse_signature_company(customer_text, ticket.body)
     domain_company_guess = _domain_company_guess(ticket.from_email)
     is_near_empty = _check_near_empty(customer_text)
@@ -108,6 +109,11 @@ def _strip_confidential_footer(text: str) -> str:
     return text[:idx].rstrip()
 
 
+def _strip_device_footers(text: str) -> str:
+    lines = [line for line in text.splitlines() if line.strip().lower() != "sent from my iphone"]
+    return "\n".join(lines)
+
+
 def _parse_signature_company(customer_text: str, raw_body: str) -> str | None:
     # Pipe form after "--" (often before footer in raw body).
     for block in (customer_text, raw_body):
@@ -133,8 +139,11 @@ def _parse_signature_company(customer_text: str, raw_body: str) -> str | None:
     for i, line in enumerate(lines):
         if "@" in line and i > 0:
             prev = lines[i - 1]
-            if prev.count(",") >= 2:
+            if prev.count(",") >= 1:
                 company = prev.split(",")[-1].strip()
+                matched = _match_known_company(company)
+                if matched:
+                    return matched
                 if company:
                     return company
 
@@ -150,6 +159,11 @@ def _parse_signature_company(customer_text: str, raw_body: str) -> str | None:
         matched = _match_known_company(last)
         if matched:
             return matched
+
+    # Last resort: find any known company name mentioned in the customer text
+    for comp in KNOWN_COMPANIES:
+        if re.search(r"\b" + re.escape(comp) + r"\b", customer_text, re.IGNORECASE):
+            return comp
 
     return None
 

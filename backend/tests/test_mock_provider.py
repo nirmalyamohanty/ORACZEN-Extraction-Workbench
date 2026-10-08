@@ -112,3 +112,16 @@ def test_tkt_0131_approximate_9000():
     assert data["refund_amount"] == 9000.0
     codes = {f["code"] for f in data["flags"]}
     assert "approximate_amount" in codes
+
+
+def test_tkt_0089_signature_ferrolane_sender_domain_mismatch():
+    data = _payload("tkt_0089")
+    assert data["company"] == "Ferrolane Steel"
+    codes = {f["code"] for f in data["flags"]}
+    assert "sender_domain_mismatch" in codes
+
+
+def test_tkt_0008_vireo_health_grounded():
+    data = _payload("tkt_0008")
+    assert data["company"] == "Vireo Health"
+    assert data["field_meta"]["company"]["grounded"] is True
