@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 
 from app import tickets as ticket_store
-from app.jobs import job_store
+from app.jobs import Item, job_store
 from app.records import generate_job_csv, patch_record, rerun_record, validate_patch_fields
 from app.schemas import (
     CreateJobRequest,
