@@ -3,16 +3,8 @@
 import { useState } from "react";
 import { rerunRecord } from "@/lib/api";
 import { JobResultItem, FieldDiff } from "@/lib/types";
-import {
-  RotateCw,
-  X,
-  Loader2,
-  Check,
-  AlertTriangle,
-  ArrowRight,
-  ShieldCheck,
-  RefreshCw,
-} from "lucide-react";
+import { X, Loader2, RefreshCw } from "lucide-react";
+import { Button } from "./ui/Button";
 
 interface RerunModalProps {
   isOpen: boolean;
@@ -75,41 +67,36 @@ export function RerunModal({
   };
 
   const formatVal = (val: unknown) => {
-    if (val === null || val === undefined) return <span className="text-slate-500 italic">null</span>;
+    if (val === null || val === undefined) return <span className="text-[#9ca3af] italic">null</span>;
     if (typeof val === "boolean") return val ? "true" : "false";
     return String(val);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
+      <div className="bg-white border border-[#e2e2dd] rounded-md max-w-2xl w-full max-h-[90vh] flex flex-col shadow-lg overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
-              <RotateCw className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                Re-run Extraction ({ticketId})
-              </h3>
-              <p className="text-xs text-slate-400">
-                Re-execute extraction pipeline and inspect field diffs before replacing
-              </p>
-            </div>
+        <div className="px-5 py-3.5 border-b border-[#e2e2dd] flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-[#1c1c1a]">
+              Re-run extraction ({ticketId})
+            </h3>
+            <p className="text-xs text-[#6b6b66]">
+              Compare model extraction output against existing record
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1 text-[#6b6b66] hover:text-[#1c1c1a] rounded transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+        <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {/* Settings Section */}
-          <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/80">
+          <div className="bg-[#f7f7f5] p-3 rounded-md border border-[#e2e2dd]">
             <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -121,14 +108,14 @@ export function RerunModal({
                     handleFetchPreview(checked);
                   }
                 }}
-                className="mt-0.5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="mt-0.5 rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8]"
               />
               <div className="text-xs">
-                <span className="font-medium text-slate-200">
+                <span className="font-medium text-[#1c1c1a]">
                   Overwrite human-edited fields
                 </span>
-                <p className="text-slate-400 mt-0.5">
-                  When unchecked, values previously edited by humans are strictly preserved.
+                <p className="text-[#6b6b66] mt-0.5">
+                  When unchecked, fields you manually edited are preserved.
                 </p>
               </div>
             </label>
@@ -136,67 +123,65 @@ export function RerunModal({
 
           {/* Action to Generate Preview */}
           {!diff && !loading && (
-            <div className="text-center py-6 border border-dashed border-slate-800 rounded-lg">
-              <ShieldCheck className="w-8 h-8 text-indigo-400 mx-auto mb-2 opacity-80" />
-              <p className="text-xs text-slate-300 font-medium">
-                Preview changes before replacing
+            <div className="text-center py-6 border border-dashed border-[#e2e2dd] rounded-md">
+              <p className="text-xs text-[#1c1c1a] font-medium">
+                Calculate diff preview
               </p>
-              <p className="text-[11px] text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                Calculate the pipeline output to inspect field diffs side-by-side with your existing record.
+              <p className="text-[11px] text-[#6b6b66] max-w-sm mx-auto mt-1 mb-4">
+                Run the extraction to inspect changed values before applying.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleFetchPreview()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Calculate Diff Preview</span>
-              </button>
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Calculate Diff Preview
+              </Button>
             </div>
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center py-10 gap-2.5 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-              <span className="text-xs">Running extraction pipeline preview...</span>
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-[#6b6b66]">
+              <Loader2 className="w-5 h-5 animate-spin text-[#1f4fd8]" />
+              <span className="text-xs">Running extraction preview...</span>
             </div>
           )}
 
           {previewError && (
-            <div className="flex items-center gap-2 p-3 text-xs text-rose-300 bg-rose-950/40 border border-rose-800/60 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>{previewError}</span>
+            <div className="p-3 text-xs text-[#b91c1c] bg-[#fee2e2] border border-[#fecaca] rounded-md">
+              {previewError}
             </div>
           )}
 
           {/* Diff Table */}
           {diff && !loading && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-slate-200">
-                  Diff Comparison (Current vs New Extraction)
+                <h4 className="text-xs font-semibold text-[#1c1c1a]">
+                  Diff comparison
                 </h4>
                 <button
                   type="button"
                   onClick={() => handleFetchPreview()}
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  className="text-xs text-[#1f4fd8] hover:underline flex items-center gap-1"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>Re-calculate</span>
                 </button>
               </div>
 
-              <div className="border border-slate-800 rounded-lg overflow-hidden text-xs">
+              <div className="border border-[#e2e2dd] rounded-md overflow-hidden text-xs">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-medium">
+                  <thead className="bg-[#f7f7f5] text-[#6b6b66] border-b border-[#e2e2dd] font-medium">
                     <tr>
                       <th className="py-2 px-3">Field</th>
-                      <th className="py-2 px-3">Current Value</th>
-                      <th className="py-2 px-3">New Model Value</th>
-                      <th className="py-2 px-3">Outcome</th>
+                      <th className="py-2 px-3">Current</th>
+                      <th className="py-2 px-3">New</th>
+                      <th className="py-2 px-3">Result</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/60 font-mono text-[11px]">
+                  <tbody className="divide-y divide-[#e2e2dd] font-mono text-xs">
                     {Object.entries(diff).map(([fname, fdiff]) => {
                       const isSame =
                         JSON.stringify(fdiff.old_value) ===
@@ -207,46 +192,41 @@ export function RerunModal({
                           className={
                             !isSame
                               ? fdiff.will_replace
-                                ? "bg-emerald-950/10"
-                                : "bg-amber-950/10"
-                              : ""
+                                ? "bg-[#f0fdf4]"
+                                : "bg-[#fefce8]"
+                              : "bg-white"
                           }
                         >
-                          <td className="py-2 px-3 font-sans font-medium text-slate-300">
+                          <td className="py-2 px-3 font-sans font-medium text-[#1c1c1a]">
                             {fname}
                           </td>
-                          <td className="py-2 px-3 text-slate-300">
+                          <td className="py-2 px-3 text-[#1c1c1a]">
                             <div className="flex items-center gap-1.5">
                               <span>{formatVal(fdiff.old_value)}</span>
                               {fdiff.is_edited && (
-                                <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-sans border border-amber-500/30">
-                                  Human
+                                <span className="text-[10px] px-1 py-0.2 bg-[#f3f4f6] text-[#4b5563] rounded font-sans border border-[#e5e7eb]">
+                                  edited
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-slate-300">
-                            <span
-                              className={
-                                !isSame ? "text-indigo-300 font-semibold" : ""
-                              }
-                            >
+                          <td className="py-2 px-3 text-[#1c1c1a]">
+                            <span className={!isSame ? "font-semibold text-[#1f4fd8]" : ""}>
                               {formatVal(fdiff.new_value)}
                             </span>
                           </td>
                           <td className="py-2 px-3 font-sans">
                             {fdiff.is_edited && !fdiff.will_replace ? (
-                              <span className="text-[10px] text-amber-400 font-medium bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40">
-                                Kept Human Value
+                              <span className="text-[#b45309] font-medium">
+                                Keep (edited)
                               </span>
                             ) : !isSame ? (
-                              <span className="text-[10px] text-emerald-400 font-medium bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 flex items-center gap-1 w-fit">
-                                <ArrowRight className="w-2.5 h-2.5" />
-                                Replaces
+                              <span className="text-[#166534] font-medium">
+                                Replace
                               </span>
                             ) : (
-                              <span className="text-[10px] text-slate-500">
-                                Unchanged
+                              <span className="text-[#9ca3af]">
+                                No change
                               </span>
                             )}
                           </td>
@@ -261,32 +241,25 @@ export function RerunModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-2.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-          >
+        <div className="px-5 py-3 border-t border-[#e2e2dd] bg-[#f7f7f5] flex items-center justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            disabled={!diff || applying}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!diff || Object.keys(diff).length === 0 || applying}
             onClick={handleApply}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-600/20"
           >
             {applying ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Applying...</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                Applying...
               </>
             ) : (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>Confirm & Replace</span>
-              </>
+              "Confirm & Replace"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,68 +1,54 @@
 import { Flag } from "@/lib/types";
-import { AlertCircle, AlertOctagon, Info, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 interface FlagListProps {
   flags: Flag[];
 }
 
+const FLAG_CODE_LABELS: Record<string, string> = {
+  ungrounded: "Not found in ticket",
+  not_stated: "Not stated",
+  currency_mismatch: "Currency",
+  multi_issue: "Multiple issues",
+  skipped_model: "Skipped (no content)",
+  invalid_model_output: "Model output invalid",
+  derived_value: "Calculated value",
+  approximate_amount: "Approximate amount",
+  relative_date_resolved: "Date inferred",
+  sender_domain_mismatch: "Company mismatch",
+  default_category: "Category guessed",
+  vague_deadline: "Vague deadline",
+};
+
 export function FlagList({ flags }: FlagListProps) {
   if (!flags || flags.length === 0) return null;
 
-  const getFlagStyle = (code: string) => {
-    switch (code) {
-      case "invalid_model_output":
-      case "currency_mismatch":
-        return {
-          icon: <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />,
-          container: "bg-rose-950/30 border-rose-800/60 text-rose-200",
-          tag: "bg-rose-900/40 text-rose-300 border-rose-700/50",
-        };
-      case "multi_issue":
-      case "ungrounded":
-      case "skipped_model":
-        return {
-          icon: <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />,
-          container: "bg-amber-950/30 border-amber-800/60 text-amber-200",
-          tag: "bg-amber-900/40 text-amber-300 border-amber-700/50",
-        };
-      default:
-        return {
-          icon: <Info className="w-4 h-4 text-indigo-400 shrink-0" />,
-          container: "bg-indigo-950/30 border-indigo-800/60 text-indigo-200",
-          tag: "bg-indigo-900/40 text-indigo-300 border-indigo-700/50",
-        };
-    }
-  };
-
   return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-        Reviewer Flags ({flags.length})
-      </h4>
-      <div className="space-y-1.5">
+    <div className="bg-[#fef3c7] border border-[#fde68a] rounded-md p-3.5 space-y-2.5">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309]">
+        <AlertTriangle className="w-3.5 h-3.5 text-[#b45309]" />
+        <span>Needs your attention ({flags.length})</span>
+      </div>
+
+      <div className="space-y-2">
         {flags.map((flag, idx) => {
-          const style = getFlagStyle(flag.code);
+          const label = FLAG_CODE_LABELS[flag.code] || flag.code;
           return (
             <div
               key={idx}
-              className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 ${style.container}`}
+              className="text-xs text-[#92400e] bg-white/70 rounded p-2 border border-[#fde68a]/60 space-y-1"
             >
-              {style.icon}
-              <div className="flex-1 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`font-mono text-[11px] font-semibold px-1.5 py-0.2 rounded border ${style.tag}`}
-                  >
-                    {flag.code}
-                  </span>
-                  <span className="text-[11px] font-medium text-slate-400">
-                    field: {flag.field}
-                  </span>
-                </div>
-                <p className="text-xs font-medium leading-relaxed">
-                  {flag.message}
-                </p>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[#b45309]">
+                  {label}
+                </span>
+                <span className="text-[11px] text-[#6b6b66]">
+                  · {flag.field}
+                </span>
               </div>
+              <p className="text-xs text-[#78350f] leading-normal">
+                {flag.message}
+              </p>
             </div>
           );
         })}

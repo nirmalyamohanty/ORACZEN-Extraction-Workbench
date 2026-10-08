@@ -4,12 +4,8 @@ import { useState, useEffect } from "react";
 import {
   ExtractedRecord,
   FieldMeta,
-  Product,
-  Category,
-  Severity,
-  RequestedAction,
 } from "@/lib/types";
-import { Check, User, Cpu, AlertCircle, Quote } from "lucide-react";
+import { AlertCircle, Quote } from "lucide-react";
 
 interface FieldEditorProps {
   recordId: string;
@@ -115,54 +111,52 @@ export function FieldEditor({
           <div
             role="alert"
             data-testid={`error-${field}`}
-            className="flex items-center gap-1.5 text-xs text-rose-400 font-medium bg-rose-950/40 px-2 py-1 rounded border border-rose-800/60"
+            className="flex items-center gap-1.5 text-xs text-[#b91c1c] font-medium bg-[#fee2e2] px-2 py-1 rounded border border-[#fecaca]"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* Metadata pills */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+        {/* Minimal metadata pills */}
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6b6b66]">
           {meta && (
             <>
               {/* Confidence */}
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/70 border border-slate-700/60 text-slate-300 font-medium">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#f7f7f5] border border-[#e2e2dd] text-[#1c1c1a]">
                 <span>{Math.round(meta.confidence * 100)}%</span>
-                <span className="text-slate-500">conf</span>
+                <span className="text-[#6b6b66]">conf</span>
               </span>
 
               {/* Source badge */}
               {isEdited || meta.source === "human" ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-medium">
-                  <User className="w-3 h-3" />
-                  <span>edited by reviewer</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#eff6ff] border border-[#dbeafe] text-[#1d4ed8] font-medium">
+                  edited by reviewer
                 </span>
               ) : meta.grounded ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                  <Cpu className="w-3 h-3" />
-                  <span>model</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#f7f7f5] border border-[#e2e2dd] text-[#4b5563]">
+                  model
                 </span>
               ) : meta.note?.includes("domain") ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium">
-                  <span>inferred</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fef3c7] border border-[#fde68a] text-[#b45309] font-medium">
+                  inferred
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium">
-                  <span>ungrounded</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#fee2e2] border border-[#fecaca] text-[#b91c1c] font-medium">
+                  ungrounded
                 </span>
               )}
 
               {/* Note */}
               {meta.note && (
-                <span className="text-slate-500 italic">({meta.note})</span>
+                <span className="text-[#6b6b66] italic">({meta.note})</span>
               )}
             </>
           )}
 
           {/* Original value hint if touched */}
           {isEdited && origVal !== undefined && (
-            <span className="text-slate-500 ml-auto text-[10px]">
+            <span className="text-[#6b6b66] ml-auto text-[10px]">
               orig: {origVal === null ? "null" : String(origVal)}
             </span>
           )}
@@ -170,8 +164,8 @@ export function FieldEditor({
 
         {/* Evidence quote */}
         {meta?.evidence && (
-          <div className="flex items-start gap-1 text-[11px] text-slate-400 italic bg-slate-950/60 px-2 py-1 rounded border border-slate-800">
-            <Quote className="w-3 h-3 text-slate-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-1 text-[11px] text-[#6b6b66] italic bg-[#f7f7f5] px-2 py-1 rounded border border-[#e2e2dd]">
+            <Quote className="w-3 h-3 text-[#9ca3af] shrink-0 mt-0.5" />
             <span className="line-clamp-2">{meta.evidence}</span>
           </div>
         )}
@@ -179,13 +173,18 @@ export function FieldEditor({
     );
   };
 
+  const inputClass = (hasError: boolean) =>
+    `w-full px-3 py-1.5 rounded-md bg-white border text-sm text-[#1c1c1a] focus:outline-none focus:ring-1 focus:ring-[#1f4fd8] transition-colors ${
+      hasError ? "border-[#b91c1c]" : "border-[#e2e2dd]"
+    }`;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {/* Company */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-company" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Company *</span>
-          <span className="text-[11px] text-slate-500 font-normal">string (required)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
         </label>
         <input
           type="text"
@@ -199,9 +198,7 @@ export function FieldEditor({
             handleCommit("company");
           }}
           onKeyDown={(e) => handleKeyDown("company", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.company ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.company))}
           placeholder="e.g. Acme Corp"
         />
         {renderFieldFooter("company")}
@@ -209,9 +206,9 @@ export function FieldEditor({
 
       {/* Product */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-product" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Product</span>
-          <span className="text-[11px] text-slate-500 font-normal">Zen enum (optional)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
         </label>
         <select
           id="field-product"
@@ -224,9 +221,7 @@ export function FieldEditor({
             handleCommit("product");
           }}
           onKeyDown={(e) => handleKeyDown("product", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.product ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.product))}
         >
           <option value="">(not stated)</option>
           <option value="Zen Orchestrator">Zen Orchestrator</option>
@@ -240,9 +235,9 @@ export function FieldEditor({
 
       {/* Category */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-category" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Category *</span>
-          <span className="text-[11px] text-slate-500 font-normal">enum (required)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
         </label>
         <select
           id="field-category"
@@ -255,9 +250,7 @@ export function FieldEditor({
             handleCommit("category");
           }}
           onKeyDown={(e) => handleKeyDown("category", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.category ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.category))}
         >
           <option value="">(select category)</option>
           <option value="outage">outage</option>
@@ -272,9 +265,9 @@ export function FieldEditor({
 
       {/* Severity */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-severity" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Severity</span>
-          <span className="text-[11px] text-slate-500 font-normal">enum (optional)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
         </label>
         <select
           id="field-severity"
@@ -287,9 +280,7 @@ export function FieldEditor({
             handleCommit("severity");
           }}
           onKeyDown={(e) => handleKeyDown("severity", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.severity ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.severity))}
         >
           <option value="">(not stated)</option>
           <option value="low">low</option>
@@ -302,9 +293,9 @@ export function FieldEditor({
 
       {/* Requested Action */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-requested_action" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Requested Action *</span>
-          <span className="text-[11px] text-slate-500 font-normal">enum (required)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">required</span>
         </label>
         <select
           id="field-requested_action"
@@ -317,9 +308,7 @@ export function FieldEditor({
             handleCommit("requested_action");
           }}
           onKeyDown={(e) => handleKeyDown("requested_action", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.requested_action ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.requested_action))}
         >
           <option value="">(select action)</option>
           <option value="refund">refund</option>
@@ -334,9 +323,9 @@ export function FieldEditor({
 
       {/* Refund Amount (USD) */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-refund_amount" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Refund Amount (USD)</span>
-          <span className="text-[11px] text-slate-500 font-normal">number &ge; 0 (optional)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
         </label>
         <input
           type="number"
@@ -351,9 +340,7 @@ export function FieldEditor({
             handleCommit("refund_amount");
           }}
           onKeyDown={(e) => handleKeyDown("refund_amount", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.refund_amount ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.refund_amount))}
           placeholder="e.g. 4820"
         />
         {renderFieldFooter("refund_amount")}
@@ -361,9 +348,9 @@ export function FieldEditor({
 
       {/* Deadline */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <label htmlFor="field-deadline" className="text-xs font-semibold text-[#1c1c1a] flex items-center justify-between">
           <span>Deadline</span>
-          <span className="text-[11px] text-slate-500 font-normal">date YYYY-MM-DD (optional)</span>
+          <span className="text-[11px] text-[#6b6b66] font-normal">optional</span>
         </label>
         <input
           type="date"
@@ -377,24 +364,22 @@ export function FieldEditor({
             handleCommit("deadline");
           }}
           onKeyDown={(e) => handleKeyDown("deadline", e)}
-          className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-            fieldErrors.deadline ? "border-rose-500" : "border-slate-700"
-          }`}
+          className={inputClass(Boolean(fieldErrors.deadline))}
         />
         {renderFieldFooter("deadline")}
       </div>
 
       {/* Escalated */}
-      <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+      <div className="p-3 rounded-md bg-white border border-[#e2e2dd] flex items-center justify-between">
         <div>
           <label
             htmlFor="field-escalated"
-            className="text-xs font-semibold text-slate-200 cursor-pointer select-none"
+            className="text-xs font-semibold text-[#1c1c1a] cursor-pointer select-none"
           >
             Escalated
           </label>
-          <p className="text-[11px] text-slate-400">
-            Check if customer indicated executive/leadership escalation or termination risk
+          <p className="text-[11px] text-[#6b6b66]">
+            Check if customer indicated executive escalation or churn risk
           </p>
         </div>
         <input
@@ -406,7 +391,7 @@ export function FieldEditor({
             handleChange("escalated", e.target.checked);
             onPatchField("escalated", e.target.checked);
           }}
-          className="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-900 cursor-pointer"
+          className="w-4 h-4 rounded border-[#e2e2dd] text-[#1f4fd8] focus:ring-[#1f4fd8] cursor-pointer"
         />
       </div>
       {renderFieldFooter("escalated")}
