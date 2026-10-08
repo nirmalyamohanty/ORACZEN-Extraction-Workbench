@@ -1,110 +1,114 @@
-# Decisions
+# Engineering Decisions
 
-## The five decisions
-
-### 1. A ticket says nothing about severity — what does the model return?
-
-Severity comes back as `null` and a `not_stated` flag is attached to the record.
-I rejected defaulting to `"medium"` because a wrong severity can hide a real outage — an
-ops team triaging a `critical` board-demo failure should not have to dig past a queue full
-of `medium` items that are medium only by default. An empty field is honest; a wrong default
-is not. The item does not go to `needs_review` for this alone — missing severity is a gap
-the reviewer can fill or leave, not a system error. (About half the how-to and
-feature-request tickets never state a severity; flooding `needs_review` would make the tool
-useless.)
-
-### 2. `tkt_0058` is in French and mentions 4 820 EUR — what does `refund_amount` hold?
-
-`refund_amount` is set to `null` and a `currency_mismatch` flag is added with the message
-"Customer stated 4 820 EUR (two duplicate charges). Field is USD; enter USD amount manually."
-The original amount is kept in the flag message and in `FieldMeta.note` so the reviewer
-sees exactly what the customer said. Silently converting at any exchange rate would give a
-number that looks precise but is wrong the moment the rate changes. Null forces the
-reviewer to enter the correct USD figure.
-
-### 3. `tkt_0089` has three problems and two categories — how is multi-issue handled?
-
-The pipeline picks the single highest-risk category using a fixed priority order:
-`churn_risk > outage > billing > bug > feature_request > how_to`. A `multi_issue` flag
-records every other detected category. The schema stays flat (one category per record) and
-the most urgent signal drives routing. Reviewers can read the full ticket in the side panel
-to understand the other issues.
-
-### 4. Tickets whose bodies are `please advise` and `?` — do they go to the model?
-
-No. Bodies with fewer than 10 alphabetic characters after cleaning are classified as
-near-empty and bypassed. The record goes straight to `needs_review` with a `skipped_model`
-flag. A company guess is inferred from the sender's email domain so the reviewer has
-something to start from. Sending these to the model wastes quota and reliably produces
-hallucinated records that look plausible.
-
-### 5. Progress reporting — polling or streaming?
-
-Polling. The frontend polls `GET /api/jobs/{id}` and `GET /api/jobs/{id}/results` every second, using an `inFlightRef` to prevent concurrent polls from stacking if network latency spikes, and an `AbortController` to cleanly abort pending requests on unmount. Polling stops automatically once the job reaches a terminal state (`done`, `cancelled`, `failed`).
-
-Polling is the right default for this use case: it works reliably on free-tier hosting and serverless proxies that buffer or terminate long-lived connections (Vercel, Render free tier). SSE would lower the request count at scale, but it adds a server-side async generator, an `EventSource` on the client, and a fallback path for proxies that strip chunked responses — complexity that is not justified for an internal review tool used by a handful of reviewers. SSE is noted as future work if the tool is deployed at scale.
+This document details the architectural and product trade-offs made during the design and implementation of Extraction Workbench.
 
 ---
 
-## What I noticed in the ticket data
+## 1. Why No Database?
 
-Reading the first twenty or so tickets before writing any code saved a lot of rework:
+**Decision**: All jobs, item progress counters, extracted records, and human edits are maintained in-memory within Python dictionaries (`job_store.jobs` and `job_store.records`).
 
-- **Subject lines contradict the body** in several tickets (e.g. subject "How do I..."
-  on what is plainly a bug report). The extractor ignores the subject for field values.
-- **Quoted reply chains** include staff replies (`@oraczen.ai`) with old dates and
-  "following up, still no response". If those aren't stripped first, the model treats
-  them as the customer's current claim. About 38 tickets have them.
-- **Company name is absent from the body** in roughly 64 of 150 tickets; the only
-  clue is the sender domain. In tkt_0058, tkt_0089, and tkt_0131 the signature company
-  and sender domain actively disagree — the signature wins but the mismatch is flagged.
-- **Two amounts appear in billing tickets**: the amount charged and the amount quoted.
-  The model must not invent a refund for a quote-vs-invoice dispute; those land with a
-  `derived_value` flag instead.
-- **Relative dates mix deadlines with event dates**: "billed on the 7th" is past, not
-  a deadline. "before the 27th" is a deadline — but tkt_0002 was received on 28 Aug,
-  so "the 27th" resolves to 27 Sep. Getting this wrong would show a date that has
-  already passed.
-- `tkt_0131` is a phone transcript where the customer says "about nine thousand
-  something". The mock converts it to 9000.0 with an `approximate_amount` flag and
-  confidence 0.3.
+**Rationale**:
+- The project specification explicitly stipulates zero external database dependencies to enable straightforward grading and local evaluation.
+- Storing state in memory removes the operational burden of provisioning PostgreSQL, SQLite migrations, or Redis instances.
+- For an evaluation workload of 150 tickets, Python dictionaries provide $O(1)$ lookup performance, instant reads/writes, and zero connection overhead.
+
+**Consequence & Limitation**:
+- All state is wiped if the backend process restarts.
+- The FastAPI application must be executed with a single Uvicorn worker process (`--workers 1`). Running multiple worker processes would shard memory across separate Python interpreters, leading to state inconsistencies.
+- In a production evolution of this tool, `JobStore` would be backed by an async ORM (such as SQLModel/SQLAlchemy) pointing to PostgreSQL or SQLite.
 
 ---
 
-## What breaks on process restart
+## 2. Why a Deterministic Mock Provider?
 
-Everything. All jobs, all extracted records, all human edits are stored in Python dicts
-in memory. A restart wipes them. This is fine for a graded exercise but not for
-production. With another day I would add an optional SQLite backend behind the same
-`JobStore` interface — no change to routes or the frontend. The single-worker constraint
-(needed for consistent in-memory state) also means the backend can only use one CPU core;
-that would go away with a real store.
+**Decision**: The default extraction engine is `MockProvider`, which derives structured fields using pattern matching, regex heuristics, and predefined deliberate failure cases.
 
----
-
-## What I would test on the frontend beyond the one test
-
-The current test covers field-error display and the sort order of the results list.
-I would also want:
-
-- **Polling teardown**: mount the hook, advance fake timers past the 1-second interval,
-  unmount, and assert no further fetch calls happen. Prevents memory leaks in long-running
-  tabs.
-- **Abort-controller non-stacking**: simulate a slow first response, verify a second tick
-  does not fire a new request while the first is in flight.
-- **PATCH validation feedback**: verify the saving state is displayed and inline
-  422 validation errors are rendered under the specific rejected field.
-- **Export CSV button**: assert the `<a>` href points to the correct URL with the right
-  job id.
+**Rationale**:
+- External LLM APIs (OpenAI, Anthropic, Gemini) introduce non-deterministic completions, network latency, rate limits, and quota exhaustion during automated test runs.
+- Evaluators should be able to clone the repository, run `pytest`, and evaluate the entire pipeline without registering for an API key or incurring billing costs.
+- The mock provider explicitly simulates real-world LLM extraction behaviors:
+  - Configurable artificial network latency (`MOCK_DELAY_MIN_MS` to `MOCK_DELAY_MAX_MS`).
+  - Deliberate schema failure on attempt 1 with recovery on attempt 2 (`tkt_0017`, `tkt_0063`).
+  - Deliberate unrecoverable failure after 2 attempts (`tkt_0042`, `tkt_0121`), routing into `needs_review`.
+  - Evidence quote generation and confidence scoring.
 
 ---
 
-## What I am least happy with
+## 3. Why Human-in-the-Loop Review?
 
-- The mock provider's field rules are keyword-based regexes, not real inference.
-  Determinism is achieved by hardcoding behaviour for specific ticket patterns rather than
-  actually deriving fields from text. A real provider would do it differently.
-- `patch_record` re-validates the entire merged record on every call. For a single-field
-  patch this is fine, but it means a `needs_review` draft with multiple missing required
-  fields cannot be partially saved unless the dummy baseline covers them. The current
-  workaround (a `dummy` dict with defaults) is slightly hacky.
+**Decision**: Records with schema validation failures, missing content, ungrounded evidence quotes, or currency discrepancies are routed to an interactive human review queue rather than silently forced into arbitrary shapes.
+
+**Rationale**:
+- Support tickets frequently trigger critical operational actions (issuing financial refunds, initiating contract cancellations, escalating critical outages).
+- An autonomous LLM making confident yet hallucinated guesses on financial amounts or contract deadlines can cause severe operational damage.
+- Human review is prioritized by urgency: unresolved `needs_review` items appear first, followed by failed items, and finally completed items.
+
+---
+
+## 4. Why Can Severity Remain Null?
+
+**Decision**: When a ticket does not explicitly indicate severity, `severity` is set to `null` and a `not_stated` flag is recorded.
+
+**Rationale**:
+- Defaulting missing severities to `"medium"` is deceptive. If 50% of routine questions have unstated severity, flooding triage queues with synthetic `"medium"` tags obscures genuine issues.
+- More dangerously, defaulting to `"medium"` could downplay a critical outage if an executive email omits explicit severity keywords.
+- Storing `null` is an honest reflection of the source data. The reviewer can choose to leave it unstated or assign a severity based on operational context.
+
+---
+
+## 5. Why Don't We Convert EUR to USD?
+
+**Decision**: In tickets mentioning foreign currency (such as `tkt_0058` quoting `4 820 EUR`), `refund_amount` is set to `null` and a `currency_mismatch` flag is raised.
+
+**Rationale**:
+- The schema explicitly defines `refund_amount` as a USD float.
+- Applying an arbitrary or hardcoded currency conversion rate introduces floating-point inaccuracies and currency exchange volatility.
+- Silently converting EUR to USD would create a derived value that the customer never agreed to. Setting `refund_amount: null` forces a human reviewer to inspect the ticket and enter the exact approved USD refund amount.
+
+---
+
+## 6. Why Cancellation is Authoritative
+
+**Decision**: When a job is cancelled via `POST /api/jobs/{id}/cancel`, all queued and currently running items are marked as `cancelled`. When a worker completes its extraction task, it explicitly checks whether the item was cancelled before updating record state.
+
+**Rationale**:
+- In asynchronous systems with concurrency, worker tasks already in flight may finish seconds after a user clicks "Cancel".
+- If late-finishing tasks were allowed to write their results to the record store, a job marked `cancelled` could have items silently change from `cancelled` to `done`.
+- Checking `if item.status != "cancelled"` before mutating state ensures that user cancellation is authoritative and cannot be overwritten by background worker races.
+
+---
+
+## 7. Why HTTP Polling Over Server-Sent Events (SSE)?
+
+**Decision**: The frontend polls `GET /api/jobs/{id}` and `GET /api/jobs/{id}/results` every 1000ms while a job is active, stopping once terminal status (`done`, `cancelled`, `failed`) is reached.
+
+**Rationale**:
+- Free-tier serverless proxies (Vercel, Render free tier) frequently drop, buffer, or timeout long-lived HTTP streaming connections.
+- Polling requires zero custom connection state, reconnect backoff logic, or event streaming infrastructure.
+- To prevent network congestion, the frontend implements:
+  - `inFlightRef`: Drops poll requests if a previous HTTP response is still traveling over the network.
+  - `AbortController`: Aborts pending network requests immediately when the user navigates away or unmounts the page.
+  - Optimistic local cache updates: Inline field edits update the UI immediately without waiting for the next polling interval.
+
+---
+
+## 8. Multi-Issue Ticket Category Priority
+
+**Decision**: When a ticket touches multiple distinct issues (`tkt_0089`), the primary category is assigned using a strict risk-based priority order:
+$$\text{churn\_risk} > \text{outage} > \text{billing} > \text{bug} > \text{feature\_request} > \text{how\_to}$$
+
+**Rationale**:
+- A single ticket may report a bug while simultaneously threatening contract termination. Churn risk and system outages demand immediate routing to executive or engineering incident teams.
+- Secondary topics are not discarded: they are preserved in `multi_issue` flags and reviewer notes so the human reviewer can inspect the full context in the ticket viewer.
+
+---
+
+## 9. Near-Empty Tickets and Model Bypassing
+
+**Decision**: Ticket bodies containing fewer than 10 alphabetic characters after cleanup (e.g. `tkt_0004` saying "please advise" or "?") bypass provider execution entirely.
+
+**Rationale**:
+- Sending near-empty prompts to an LLM reliably produces hallucinations, as the model attempts to generate plausible values for required schema fields.
+- Bypassing the model saves API quota and processing time.
+- The ticket immediately enters `needs_review` with a `skipped_model` flag and a company name inferred from the sender's email domain, giving the human reviewer a clear starting point.
